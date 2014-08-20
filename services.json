@@ -1,0 +1,6 @@
+{
+    "services": {
+        "flushcache":   "justso\\justgen\\FlushCache",
+        "*":            "justso\\justgen\\PageGenerator"
+    }
+}
