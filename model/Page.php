@@ -23,7 +23,11 @@ class Page extends \justso\justtexts\model\Page
     public function __construct($id=null, $value=null, RequestHelper $request=null)
     {
         parent::__construct($id, $value, $request);
-        $this->template = $request->getIdentifierParam('name');
+        if ($request !== null) {
+            $this->template = $request->getIdentifierParam('template');
+        } else {
+            $this->template = $this->name;
+        }
     }
 
     public function getJSON()
