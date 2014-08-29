@@ -10,6 +10,7 @@
 namespace justso\justgen;
 
 use justso\justapi\Bootstrap;
+use justso\justapi\FileSystem;
 use justso\justapi\InvalidParameterException;
 use justso\justapi\RestService;
 use justso\justtexts\model\Text;
@@ -57,7 +58,8 @@ class PageGenerator extends RestService
             $smarty->assign('language', $language);
             $smarty->assign('page', $page);
 
-            $pageTexts = new Text($page, $appRoot, $languages);
+            $fs = new FileSystem();
+            $pageTexts = new Text($fs, $page, $appRoot, $languages);
             $smarty->assign(array_map(
                 function($info) {
                     return $info['content'];
