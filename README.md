@@ -34,3 +34,7 @@ To make the automatic page generation work, you need to extend your Apache confi
 ```
 
 After reloading your Apache, it should work.
+
+## Support & More
+
+If you need support, please contact us: http://justso.de
