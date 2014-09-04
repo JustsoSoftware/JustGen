@@ -10,12 +10,8 @@
 namespace justso\justgen;
 
 use justso\justapi\Bootstrap;
-use justso\justapi\FileSystem;
 use justso\justapi\InvalidParameterException;
 use justso\justapi\RestService;
-use justso\justtexts\model\Text;
-
-require dirname(dirname(__DIR__)) . '/smarty-3.1.19/Smarty.class.php';
 
 /**
  * Class PageGenerator
@@ -24,17 +20,51 @@ require dirname(dirname(__DIR__)) . '/smarty-3.1.19/Smarty.class.php';
  */
 class PageGenerator extends RestService
 {
+    private $defaultsApplied = false;
+
+    private $language;
+
+    private $page = 'index';
+
+    /**
+     * Service to generate a page
+     */
     function getAction()
     {
-        $defaultsApplied = false;
         $config = Bootstrap::getInstance()->getConfiguration();
         $languages = $config['languages'];
+        $this->extractParams($languages);
+        if (!isset($config['pages'][$this->page])) {
+            $this->environment->sendResult('404 Not found', "text/plain; charset=utf-8", "Page not found");
+        } else {
+            $fs = $this->environment->getFileSystem();
+            $pageTemplate = new PageTemplate($config['pages'][$this->page], $languages);
+            $content = $pageTemplate->generate($this->language, $this->page, $fs);
+            $appRoot = Bootstrap::getInstance()->getAppRoot();
+            $destination = $appRoot . '/htdocs/' . $this->language . '/' . $this->page . '.html';
+            $fs->putFile($destination, $content);
+            if ($this->defaultsApplied) {
+                $this->environment->sendHeader('Location: /' . $this->language . '/' . $this->page . '.html');
+            } else {
+                $this->environment->sendResult("200 Ok", "text/html", $content);
+            }
+        }
+    }
+
+    /**
+     * Extracts language and page parameters from access path
+     *
+     * @param $languages
+     * @throws \justso\justapi\InvalidParameterException
+     */
+    private function extractParams($languages)
+    {
         $server = $this->environment->getRequestHelper()->getServerParams();
         $parts = explode('/', $server['REDIRECT_URL'], 2);
 
+        $this->language = $languages[0];
         if ($parts[0] == '') {
-            $language = $languages[0];
-            $defaultsApplied = true;
+            $this->defaultsApplied = true;
         } else {
             $language = $parts[0];
             if (!in_array($language, $languages)) {
@@ -42,43 +72,9 @@ class PageGenerator extends RestService
             }
         }
         if ($parts[1] == '') {
-            $page = 'index';
-            $defaultsApplied = true;
+            $this->defaultsApplied = true;
         } else {
-            $page = basename($parts[1], '.html');
-        }
-        if (!isset($config['pages'][$page])) {
-            $this->environment->sendResult('404 Not found', "text/plain; charset=utf-8", "Page not found");
-        } else {
-            $template = $config['pages'][$page];
-            $appRoot = Bootstrap::getInstance()->getAppRoot();
-            $smarty = new \Smarty;
-            $smarty->setTemplateDir($appRoot . '/content/templates');
-            $smarty->setCompileDir($appRoot . '/files/smarty');
-            $smarty->assign('language', $language);
-            $smarty->assign('page', $page);
-
-            $fs = new FileSystem();
-            $pageTexts = new Text($fs, $page, $appRoot, $languages);
-            $smarty->assign(array_map(
-                function($info) {
-                    return $info['content'];
-                },
-                $pageTexts->getPageTexts($language)
-            ));
-
-            $content = $smarty->fetch($template . '.tpl');
-            $destinationFolder = $appRoot . '/htdocs/' . $language;
-            $destination = $destinationFolder . '/' . $page . '.html';
-            if (!file_exists($destinationFolder)) {
-                mkdir($destinationFolder);
-            }
-            file_put_contents($destination, $content);
-            if ($defaultsApplied) {
-                $this->environment->sendHeader('Location: /' . $language . '/' . $page . '.html');
-            } else {
-                $this->environment->sendResult("200 Ok", "text/html", $content);
-            }
+            $this->page = basename($parts[1], '.html');
         }
     }
 }
