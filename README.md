@@ -17,7 +17,7 @@ The module utilizes Apache rewriting, the JustAPI and the JustTexts package.
 Checkout in vendor/justso/justgen and append a line
 
 ```
-  "justgen\/*":   "file:vendor\/justso\/justgen\/services.json"
+  "justgen/*":   "file:vendor/justso/justgen/services.json"
 ```
 
 to your config.json file (see JustAPI package).
