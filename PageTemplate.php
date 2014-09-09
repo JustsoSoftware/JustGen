@@ -53,8 +53,8 @@ class PageTemplate
     {
         $appRoot = Bootstrap::getInstance()->getAppRoot();
         $smarty = new \Smarty;
-        $smarty->setTemplateDir($appRoot . '/templates');
-        $smarty->setCompileDir($appRoot . '/files/smarty');
+        $smarty->setTemplateDir($fs->getRealPath($appRoot . '/templates'));
+        $smarty->setCompileDir($fs->getRealPath($appRoot . '/files/smarty'));
         $smarty->assign('language', $language);
         $smarty->assign('page', $page);
 
