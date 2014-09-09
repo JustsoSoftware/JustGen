@@ -71,7 +71,7 @@ class PageGenerator extends RestService
                 throw new InvalidParameterException("Unknown language");
             }
         }
-        if ($parts[1] == '') {
+        if (empty($parts[1])) {
             $this->defaultsApplied = true;
         } else {
             $this->page = basename($parts[1], '.html');
