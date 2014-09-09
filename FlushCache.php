@@ -24,13 +24,13 @@ class FlushCache extends RestService
     {
         $config = Bootstrap::getInstance()->getConfiguration();
         $website = Bootstrap::getInstance()->getAppRoot() . '/htdocs/';
-        $result = array();
+        $fs = $this->environment->getFileSystem();
         foreach ($config['languages'] as $language) {
-            foreach (glob($website . $language . '/*') as $page) {
-                unlink($page);
+            foreach ($fs->glob($website . $language . '/*') as $page) {
+                $fs->deleteFile($page);
             }
-            rmdir($website . $language);
+            $fs->removeDir($website . $language);
         }
-        $this->environment->sendJSONResult($result);
+        $this->environment->sendJSONResult("ok");
     }
 }
