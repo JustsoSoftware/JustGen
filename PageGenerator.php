@@ -46,7 +46,7 @@ class PageGenerator extends RestService
             if ($this->defaultsApplied) {
                 $this->environment->sendHeader('Location: /' . $this->language . '/' . $this->page . '.html');
             } else {
-                $this->environment->sendResult("200 Ok", "text/html", $content);
+                $this->environment->sendResult("200 Ok", "text/html; charset=utf-8", $content);
             }
         }
     }
