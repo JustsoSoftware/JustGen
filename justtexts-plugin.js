@@ -12,3 +12,15 @@ value = value.replace(/<\/span>/m, '</span><span class="template" contenteditabl
 pageEntry.html(value);
 
 $("#pages").find(".name").after('<span class="template">Template</span>');
+
+$(".navbar .container").append($('<button id="flush" class="pull-right btn">Flush Cache</button>'));
+$("#flush").on("click", function() {
+    $.get("/api/justgen/flushcache")
+        .then(function() {
+            window.router.refreshPageListView();
+        })
+        .fail(function(error, message) {
+            alert(message + ': ' + error.responseText);
+        });
+    return false;
+});
