@@ -41,7 +41,7 @@ After reloading your Apache, it should work.
 
 ## Templates
 
-Templates are stored in a /template folder and are filled by the generator with help from Smarty http://www.smarty.net
+Templates are stored in a /templates folder and are filled by the generator with help from Smarty http://www.smarty.net
 
 ## Support & More
 
