@@ -35,7 +35,7 @@ class PageGenerator extends RestService
         $languages = $config['languages'];
         $this->extractParams($languages);
         if (!isset($config['pages'][$this->page])) {
-            $this->environment->sendResult('404 Not found', "text/plain; charset=utf-8", "Page not found");
+            $this->environment->sendResult('404 Not found', "text/plain; charset=utf-8", "Page '{$this->page}' not found");
         } else {
             $fs = $this->environment->getFileSystem();
             $pageTemplate = new PageTemplate($config['pages'][$this->page], $languages);
@@ -60,7 +60,7 @@ class PageGenerator extends RestService
     private function extractParams($languages)
     {
         $server = $this->environment->getRequestHelper()->getServerParams();
-        $parts = explode('/', $server['REDIRECT_URL'], 2);
+        $parts = explode('/', preg_replace('/^\//', '', $server['REDIRECT_URL']), 2);
 
         $this->language = $languages[0];
         if ($parts[0] == '') {

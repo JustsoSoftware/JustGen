@@ -13,7 +13,7 @@ use justso\justapi\Bootstrap;
 use justso\justapi\FileSystemInterface;
 use justso\justtexts\model\Text;
 
-require dirname(dirname(__DIR__)) . '/smarty-3.1.19/Smarty.class.php';
+require dirname(dirname(__DIR__)) . '/autoload.php';
 
 /**
  * Class PageTemplate
