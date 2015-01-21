@@ -34,21 +34,42 @@ class PageGenerator extends RestService
         $config = Bootstrap::getInstance()->getConfiguration();
         $languages = $config['languages'];
         $this->extractParams($languages);
-        if (!isset($config['pages'][$this->page])) {
-            $this->environment->sendResult('404 Not found', "text/plain; charset=utf-8", "Page '{$this->page}' not found");
+        if ($this->defaultsApplied) {
+            $url = '/' . $this->language . '/' . $this->page;
+            $this->environment->sendHeader('Location: ' . $url);
+            $this->environment->sendResult("301 Moved Permanently", 'text/plain', "New location: $url");
         } else {
-            $fs = $this->environment->getFileSystem();
-            $pageTemplate = new PageTemplate($config['pages'][$this->page], $languages);
-            $content = $pageTemplate->generate($this->language, $this->page, $fs);
-            $appRoot = Bootstrap::getInstance()->getAppRoot();
-            $destination = $appRoot . '/htdocs/' . $this->language . '/' . $this->page . '.html';
-            $fs->putFile($destination, $content);
-            if ($this->defaultsApplied) {
-                $this->environment->sendHeader('Location: /' . $this->language . '/' . $this->page . '.html');
-            } else {
-                $this->environment->sendResult("200 Ok", "text/html; charset=utf-8", $content);
+            try {
+                list($type, $info) = $this->findMatchingPageRule();
+                $this->handlePageRule($type, $info, $languages);
+            } catch (\Exception $e) {
+                $this->environment->sendResult(
+                    '404 Not found',
+                    "text/plain; charset=utf-8",
+                    "Page '{$this->page}' not found"
+                );
             }
         }
+    }
+
+    /**
+     * @return array
+     * @throws \Exception
+     */
+    private function findMatchingPageRule()
+    {
+        $config = Bootstrap::getInstance()->getConfiguration();
+        foreach ($config['pages'] as $page => $rule) {
+            if (preg_match('/^' . $page . '$/', $this->page)) {
+                list($type, $info) = array_pad(explode(":", $rule, 2), 2, null);
+                if ($info === null) {
+                    $info = $type;
+                    $type = 'template';
+                }
+                return array($type, $info);
+            }
+        }
+        throw new \Exception('No page rule defined');
     }
 
     /**
@@ -60,21 +81,70 @@ class PageGenerator extends RestService
     private function extractParams($languages)
     {
         $server = $this->environment->getRequestHelper()->getServerParams();
-        $parts = explode('/', preg_replace('/^\//', '', $server['REDIRECT_URL']), 2);
+        preg_match('/^\/?(..)?\/(.*)?/', $server['REDIRECT_URL'], $parts);
 
         $this->language = $languages[0];
-        if ($parts[0] == '') {
+        if ($parts[1] == '') {
             $this->defaultsApplied = true;
         } else {
-            $language = $parts[0];
-            if (!in_array($language, $languages)) {
+            $this->language = $parts[1];
+            if (!in_array($this->language, $languages)) {
                 throw new InvalidParameterException("Unknown language");
             }
         }
-        if (empty($parts[1])) {
+        if (empty($parts[2])) {
             $this->defaultsApplied = true;
         } else {
-            $this->page = basename($parts[1], '.html');
+            $this->page = basename($parts[2], '.html');
+        }
+    }
+
+    /**
+     * @param $content
+     */
+    private function storeContent($content)
+    {
+        $appRoot = Bootstrap::getInstance()->getAppRoot();
+        $destination = $appRoot . '/htdocs/' . $this->language . '/' . $this->page . '.html';
+        $fs = $this->environment->getFileSystem();
+        $fs->putFile($destination, $content);
+
+        if ($this->defaultsApplied) {
+            $this->environment->sendHeader('Location: /' . $this->language . '/' . $this->page);
+        } else {
+            $this->environment->sendResult("200 Ok", "text/html; charset=utf-8", $content);
+        }
+    }
+
+    /**
+     * @param $type
+     * @param $info
+     * @param $languages
+     */
+    private function handlePageRule($type, $info, $languages)
+    {
+        switch ($type) {
+            case 'template':
+                $server = $this->environment->getRequestHelper()->getServerParams();
+                $baseUrl = 'http://' . $server['HTTP_HOST'];
+                $pageTemplate = new PageTemplate($info, $languages, $baseUrl);
+                $fs = $this->environment->getFileSystem();
+                $content = $pageTemplate->generate($this->language, $this->page, $fs);
+                $this->storeContent($content);
+                break;
+
+            case 'redirect':
+                $this->environment->sendHeader('Location: /' . $this->language . '/' . $info);
+                $this->environment->sendResult("301 Moved Permanently", 'text/plain', "Location: $info");
+                break;
+
+            default:
+                $this->environment->sendResult(
+                    "500 Server Error",
+                    "text/plain; charset=utf-8",
+                    "Config Error: undefined rule type '$type'"
+                );
+                break;
         }
     }
 }

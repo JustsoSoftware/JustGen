@@ -32,13 +32,19 @@ class PageTemplate
     private $languages;
 
     /**
+     * @var string
+     */
+    private $baseUrl;
+
+    /**
      * @param string $template
      * @param $languages
      */
-    public function __construct($template, $languages)
+    public function __construct($template, $languages, $baseUrl)
     {
         $this->template  = $template;
         $this->languages = $languages;
+        $this->baseUrl   = $baseUrl;
     }
 
     /**
@@ -53,10 +59,13 @@ class PageTemplate
     {
         $appRoot = Bootstrap::getInstance()->getAppRoot();
         $smarty = new \Smarty;
-        $smarty->setTemplateDir($fs->getRealPath($appRoot . '/templates'));
+        $template_dir = $fs->getRealPath($appRoot . '/templates');
+        $smarty->setTemplateDir($template_dir);
         $smarty->setCompileDir($fs->getRealPath($appRoot . '/files/smarty'));
         $smarty->assign('language', $language);
         $smarty->assign('page', $page);
+        $smarty->assign('template_dir', $template_dir);
+        $smarty->assign('base_url', $this->baseUrl);
 
         $pageTexts = new Text($fs, $page, $appRoot, $this->languages);
         $smarty->assign(array_map(
