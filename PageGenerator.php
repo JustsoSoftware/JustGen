@@ -60,7 +60,8 @@ class PageGenerator extends RestService
     {
         $config = Bootstrap::getInstance()->getConfiguration();
         foreach ($config['pages'] as $page => $rule) {
-            if (preg_match('/^' . $page . '$/', $this->page)) {
+            $pattern = str_replace(array('/', '*', '%d'), array('\\/', '.*', '\d'), $page);
+            if (preg_match('/^' . $pattern . '$/', $this->page)) {
                 list($type, $info) = array_pad(explode(":", $rule, 2), 2, null);
                 if ($info === null) {
                     $info = $type;
@@ -95,7 +96,7 @@ class PageGenerator extends RestService
         if (empty($parts[2])) {
             $this->defaultsApplied = true;
         } else {
-            $this->page = basename($parts[2], '.html');
+            $this->page = preg_replace('/\.html$/', '', $parts[2]);
         }
     }
 
