@@ -42,12 +42,10 @@ class PageGenerator extends RestService
             try {
                 list($type, $info) = $this->findMatchingPageRule();
                 $this->handlePageRule($type, $info, $languages);
+            } catch (\SmartyCompilerException $e) {
+                $this->environment->sendResult('500 Server Error', 'text/plain', $e->getMessage());
             } catch (\Exception $e) {
-                $this->environment->sendResult(
-                    '404 Not found',
-                    "text/plain; charset=utf-8",
-                    "Page '{$this->page}' not found"
-                );
+                $this->environment->sendResult('404 Not found', 'text/plain', "Page '{$this->page}' not found");
             }
         }
     }
