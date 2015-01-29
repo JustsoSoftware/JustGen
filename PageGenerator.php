@@ -107,8 +107,6 @@ class PageGenerator extends RestService
         $destination = $appRoot . '/htdocs/' . $this->language . '/' . $this->page . '.html';
         $fs = $this->environment->getFileSystem();
         $fs->putFile($destination, $content);
-
-        $this->sendResult($content);
     }
 
     /**
