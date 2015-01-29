@@ -119,7 +119,9 @@ class PageGenerator extends RestService
         switch ($type) {
             case 'template':
                 $content = $this->generate($info, $languages);
-                $this->storeContent($content);
+                if (Bootstrap::getInstance()->getInstallationType() != 'development') {
+                    $this->storeContent($content);
+                }
                 $this->sendResult($content);
                 break;
 
