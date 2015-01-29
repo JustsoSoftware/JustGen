@@ -108,11 +108,7 @@ class PageGenerator extends RestService
         $fs = $this->environment->getFileSystem();
         $fs->putFile($destination, $content);
 
-        if ($this->defaultsApplied) {
-            $this->environment->sendHeader('Location: /' . $this->language . '/' . $this->page);
-        } else {
-            $this->environment->sendResult("200 Ok", "text/html; charset=utf-8", $content);
-        }
+        $this->sendResult($content);
     }
 
     /**
@@ -124,12 +120,14 @@ class PageGenerator extends RestService
     {
         switch ($type) {
             case 'template':
-                $server = $this->environment->getRequestHelper()->getServerParams();
-                $baseUrl = 'http://' . $server['HTTP_HOST'];
-                $pageTemplate = new PageTemplate($info, $languages, $baseUrl);
-                $fs = $this->environment->getFileSystem();
-                $content = $pageTemplate->generate($this->language, $this->page, $fs);
+                $content = $this->generate($info, $languages);
                 $this->storeContent($content);
+                $this->sendResult($content);
+                break;
+
+            case 'dynamic':
+                $content = $this->generate($info, $languages);
+                $this->sendResult($content);
                 break;
 
             case 'redirect':
@@ -145,5 +143,38 @@ class PageGenerator extends RestService
                 );
                 break;
         }
+    }
+
+    /**
+     * @param $content
+     */
+    private function sendResult($content)
+    {
+        if ($this->defaultsApplied) {
+            $this->environment->sendHeader('Location: /' . $this->language . '/' . $this->page);
+        } else {
+            $this->environment->sendResult("200 Ok", "text/html; charset=utf-8", $content);
+        }
+    }
+
+    /**
+     * @param $info
+     * @param $languages
+     * @return string
+     */
+    private function generate($info, $languages)
+    {
+        $server = $this->environment->getRequestHelper()->getServerParams();
+        $baseUrl = 'http://' . $server['HTTP_HOST'];
+        $rawParams = $this->environment->getRequestHelper()->getAllParams();
+        $params = array_filter($rawParams, function() use (&$rawParams) {
+            $key = key($rawParams);
+            next($rawParams);
+            return strpos($key, '_') !== 0;
+        });
+        $pageTemplate = new PageTemplate($info, $languages, $baseUrl, $params);
+        $fs = $this->environment->getFileSystem();
+        $content = $pageTemplate->generate($this->language, $this->page, $fs);
+        return $content;
     }
 }

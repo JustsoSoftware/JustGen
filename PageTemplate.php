@@ -37,14 +37,22 @@ class PageTemplate
     private $baseUrl;
 
     /**
-     * @param string $template
-     * @param $languages
+     * @var array
      */
-    public function __construct($template, $languages, $baseUrl)
+    private $params;
+
+    /**
+     * @param string   $template
+     * @param string[] $languages
+     * @param string   $baseUrl
+     * @param array    $params
+     */
+    public function __construct($template, $languages, $baseUrl, $params = array())
     {
         $this->template  = $template;
         $this->languages = $languages;
         $this->baseUrl   = $baseUrl;
+        $this->params    = $params;
     }
 
     /**
@@ -66,6 +74,7 @@ class PageTemplate
         $smarty->assign('page', $page);
         $smarty->assign('template_dir', $template_dir);
         $smarty->assign('base_url', $this->baseUrl);
+        $smarty->assign('params', http_build_query($this->params));
 
         $pageTexts = new Text($fs, $page, $appRoot, $this->languages);
         $smarty->assign(array_map(
