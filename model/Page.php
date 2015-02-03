@@ -22,11 +22,12 @@ class Page extends \justso\justtexts\model\Page
 
     public function __construct($id=null, $value=null, RequestHelper $request=null)
     {
-        parent::__construct($id, $value, $request);
         if ($request !== null) {
+            $this->name = $request->getIdentifierParam('name');
             $this->template = $request->getIdentifierParam('template');
         } else {
-            $this->template = $this->name;
+            $this->name = $id;
+            $this->template = $value;
         }
     }
 
