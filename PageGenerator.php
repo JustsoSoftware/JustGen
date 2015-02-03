@@ -12,6 +12,7 @@ namespace justso\justgen;
 use justso\justapi\Bootstrap;
 use justso\justapi\InvalidParameterException;
 use justso\justapi\RestService;
+use justso\justapi\SystemEnvironmentInterface;
 
 /**
  * Class PageGenerator
@@ -31,42 +32,71 @@ class PageGenerator extends RestService
      */
     function getAction()
     {
-        $config = Bootstrap::getInstance()->getConfiguration();
-        $languages = $config['languages'];
-        $this->extractParams($languages);
-        if ($this->defaultsApplied) {
-            $url = '/' . $this->language . '/' . $this->page;
-            $this->environment->sendHeader('Location: ' . $url);
-            $this->environment->sendResult("301 Moved Permanently", 'text/plain', "New location: $url");
-        } else {
-            try {
-                list($type, $info) = $this->findMatchingPageRule();
-                $this->handlePageRule($type, $info, $languages);
-            } catch (\SmartyCompilerException $e) {
-                $this->environment->sendResult('500 Server Error', 'text/plain', $e->getMessage());
-            } catch (\Exception $e) {
-                $this->environment->sendResult('404 Not found', 'text/plain', "Page '{$this->page}' not found");
+        try {
+            $config = Bootstrap::getInstance()->getConfiguration();
+            $languages = $config['languages'];
+            $this->extractParams($languages);
+            if ($this->defaultsApplied) {
+                throw new RedirectException('/' . $this->language . '/' . $this->page);
+            } else {
+                $this->checkRedirections();
+                $rule = $this->findMatchingPageRule();
+                $this->handlePageRule($rule, $languages);
             }
+        } catch (RedirectException $e) {
+            $destination = $e->getMessage();
+            $this->environment->sendHeader("Location: " . $destination);
+            $this->environment->sendResult("301 Moved Permanently", 'text/plain', "Location: " . $destination);
+        } catch (\SmartyCompilerException $e) {
+            $this->environment->sendResult('500 Server Error', 'text/plain', $e->getMessage());
+        } catch (\Exception $e) {
+            $this->environment->sendResult('404 Not found', 'text/plain', "Page '{$this->page}' not found");
         }
     }
 
     /**
-     * @return array
+     * Searches in $where for an entry matching the pattern in the key part.
+     *
+     * @param string[] $where
+     * @return string|null
+     */
+    private function findMatchingEntry(array $where)
+    {
+        foreach ($where as $name => $entry) {
+            $pattern = str_replace(array('/', '*', '%d'), array('\\/', '.*', '\d'), $name);
+            if (preg_match('/^' . $pattern . '$/', $this->page)) {
+                return $entry;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Checks redirection rules and throws a RedirectException if one of them applies.
+     *
+     * @throws RedirectException
+     */
+    private function checkRedirections()
+    {
+        $config = Bootstrap::getInstance()->getConfiguration();
+        $entry = $this->findMatchingEntry($config['redirects']);
+        if ($entry !== null) {
+            throw new RedirectException($entry);
+        }
+    }
+
+    /**
+     * Searches for a matching page rule and returns the template name.
+     *
+     * @return string Template name
      * @throws \Exception
      */
     private function findMatchingPageRule()
     {
         $config = Bootstrap::getInstance()->getConfiguration();
-        foreach ($config['pages'] as $page => $rule) {
-            $pattern = str_replace(array('/', '*', '%d'), array('\\/', '.*', '\d'), $page);
-            if (preg_match('/^' . $pattern . '$/', $this->page)) {
-                list($type, $info) = array_pad(explode(":", $rule, 2), 2, null);
-                if ($info === null) {
-                    $info = $type;
-                    $type = 'template';
-                }
-                return array($type, $info);
-            }
+        $entry = $this->findMatchingEntry($config['pages']);
+        if ($entry !== null) {
+            return $entry;
         }
         throw new \Exception('No page rule defined');
     }
@@ -99,6 +129,8 @@ class PageGenerator extends RestService
     }
 
     /**
+     * Stores the content as a file for improved access performance for later requests.
+     *
      * @param $content
      */
     private function storeContent($content)
@@ -110,59 +142,35 @@ class PageGenerator extends RestService
     }
 
     /**
-     * @param $type
-     * @param $info
-     * @param $languages
+     * Handles the page rule by generating the content, caching it and sending the result.
+     *
+     * @param string   $info
+     * @param string[] $languages
      */
-    private function handlePageRule($type, $info, $languages)
+    private function handlePageRule($info, $languages)
     {
-        switch ($type) {
-            case 'template':
-                $content = $this->generate($info, $languages);
-                if (Bootstrap::getInstance()->getInstallationType() != 'development') {
-                    $this->storeContent($content);
-                }
-                $this->sendResult($content);
-                break;
-
-            case 'dynamic':
-                $content = $this->generate($info, $languages);
-                $this->sendResult($content);
-                break;
-
-            case 'redirect':
-                $this->environment->sendHeader('Location: /' . $this->language . '/' . $info);
-                $this->environment->sendResult("301 Moved Permanently", 'text/plain', "Location: $info");
-                break;
-
-            default:
-                $this->environment->sendResult(
-                    "500 Server Error",
-                    "text/plain; charset=utf-8",
-                    "Config Error: undefined rule type '$type'"
-                );
-                break;
-        }
-    }
-
-    /**
-     * @param $content
-     */
-    private function sendResult($content)
-    {
-        if ($this->defaultsApplied) {
-            $this->environment->sendHeader('Location: /' . $this->language . '/' . $this->page);
+        $templateName = $info;
+        if (strpos($info, 'dynamic:') === 0) {
+            $templateName = substr($info, strlen('dynamic:'));
+            $cacheResults = false;
         } else {
-            $this->environment->sendResult("200 Ok", "text/html; charset=utf-8", $content);
+            $cacheResults = Bootstrap::getInstance()->getInstallationType() != 'development';
         }
+        $content = $this->generate($templateName, $languages);
+        if ($cacheResults) {
+            $this->storeContent($content);
+        }
+        $this->environment->sendResult("200 Ok", "text/html; charset=utf-8", $content);
     }
 
     /**
-     * @param $info
-     * @param $languages
+     * Generates the page by applying parameters, variables and texts to the template.
+     *
+     * @param string   $templateName
+     * @param string[] $languages
      * @return string
      */
-    private function generate($info, $languages)
+    private function generate($templateName, $languages)
     {
         $server = $this->environment->getRequestHelper()->getServerParams();
         $baseUrl = 'http://' . $server['HTTP_HOST'];
@@ -172,7 +180,7 @@ class PageGenerator extends RestService
             next($rawParams);
             return strpos($key, '_') !== 0;
         });
-        $pageTemplate = new PageTemplate($info, $languages, $baseUrl, $params);
+        $pageTemplate = new PageTemplate($templateName, $languages, $baseUrl, $params);
         $fs = $this->environment->getFileSystem();
         $content = $pageTemplate->generate($this->language, $this->page, $fs);
         return $content;
