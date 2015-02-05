@@ -37,10 +37,15 @@ class PageGeneratorTest extends ServiceTestBase
         Bootstrap::getInstance()->resetConfiguration();
     }
 
+    private function createServerParams($redirectUrl)
+    {
+        return array('HTTP_HOST' => 'example.com', 'REDIRECT_URL' => $redirectUrl);
+    }
+
     public function testGetAction()
     {
         $env = $this->createTestEnvironment();
-        $env->getRequestHelper()->set(array(), array('REDIRECT_URL' => 'de/index.html'));
+        $env->getRequestHelper()->set(array(), $this->createServerParams('de/index.html'));
         $this->setupPageFiles($env);
 
         $service = new PageGenerator($env);
@@ -57,30 +62,32 @@ class PageGeneratorTest extends ServiceTestBase
     public function testAccessNonExistingPage()
     {
         $env = $this->createTestEnvironment();
-        $env->getRequestHelper()->set(array(), array('REDIRECT_URL' => 'de/non-existing.html'));
+        $env->getRequestHelper()->set(array(), $this->createServerParams('de/non-existing.html'));
 
         $service = new PageGenerator($env);
         $service->getAction();
 
         $header = array(
             'HTTP/1.0 404 Not found',
-            'Content-Type: text/plain; charset=utf-8',
+            'Content-Type: text/plain',
         );
         $this->assertEquals($header, $env->getResponseHeader());
-        $this->assertSame('Page not found', $env->getResponseContent());
+        $this->assertSame("Page 'non-existing' not found", $env->getResponseContent());
     }
 
     public function testAccessWithDefaults()
     {
         $env = $this->createTestEnvironment();
-        $env->getRequestHelper()->set(array(), array('REDIRECT_URL' => ''));
+        $env->getRequestHelper()->set(array(), $this->createServerParams(''));
         $this->setupPageFiles($env);
 
         $service = new PageGenerator($env);
         $service->getAction();
 
         $header = array(
-            'Location: /de/index.html',
+            'Location: /de/index',
+            'HTTP/1.0 301 Moved Permanently',
+            'Content-Type: text/plain'
         );
         $this->assertEquals($header, $env->getResponseHeader());
     }

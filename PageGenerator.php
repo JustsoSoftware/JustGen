@@ -79,9 +79,11 @@ class PageGenerator extends RestService
     private function checkRedirections()
     {
         $config = Bootstrap::getInstance()->getConfiguration();
-        $entry = $this->findMatchingEntry($config['redirects']);
-        if ($entry !== null) {
-            throw new RedirectException($entry);
+        if (isset($config['redirects'])) {
+            $entry = $this->findMatchingEntry($config['redirects']);
+            if ($this->findMatchingEntry($config['redirects']) !== null) {
+                throw new RedirectException($entry);
+            }
         }
     }
 
@@ -113,7 +115,7 @@ class PageGenerator extends RestService
         preg_match('/^\/?(..)?\/(.*)?/', $server['REDIRECT_URL'], $parts);
 
         $this->language = $languages[0];
-        if ($parts[1] == '') {
+        if (empty($parts[1])) {
             $this->defaultsApplied = true;
         } else {
             $this->language = $parts[1];

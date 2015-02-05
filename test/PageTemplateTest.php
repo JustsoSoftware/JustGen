@@ -44,7 +44,7 @@ class PageTemplateTest extends \PHPUnit_Framework_TestCase
         $fs = new FileSystemSandbox();
         $fs->putFile('/test-root/templates/testTemplate.tpl', 'prefix {$test} postfix');
         $fs->putFile('/test-root/htdocs/nls/abc.js', 'define({"root": {"test": "Hallo Welt!"}});');
-        $template = new PageTemplate('testTemplate', array('de'));
+        $template = new PageTemplate('testTemplate', array('de'), '/test-root');
         $result = $template->generate('de', 'abc', $fs);
         $this->assertSame('prefix Hallo Welt! postfix', $result);
     }
