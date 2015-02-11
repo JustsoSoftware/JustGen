@@ -39,7 +39,6 @@ class PageGenerator extends RestService
             if ($this->defaultsApplied) {
                 throw new RedirectException('/' . $this->language . '/' . $this->page);
             } else {
-                $this->checkRedirections();
                 $rule = $this->findMatchingPageRule();
                 $this->handlePageRule($rule, $languages);
             }
@@ -69,22 +68,6 @@ class PageGenerator extends RestService
             }
         }
         return null;
-    }
-
-    /**
-     * Checks redirection rules and throws a RedirectException if one of them applies.
-     *
-     * @throws RedirectException
-     */
-    private function checkRedirections()
-    {
-        $config = Bootstrap::getInstance()->getConfiguration();
-        if (isset($config['redirects'])) {
-            $entry = $this->findMatchingEntry($config['redirects']);
-            if ($this->findMatchingEntry($config['redirects']) !== null) {
-                throw new RedirectException($entry);
-            }
-        }
     }
 
     /**
@@ -127,6 +110,14 @@ class PageGenerator extends RestService
             $this->defaultsApplied = true;
         } else {
             $this->page = preg_replace('/(\.html|\/)$/', '', $parts[2]);
+            $config = Bootstrap::getInstance()->getConfiguration();
+            if (isset($config['redirects'])) {
+                $entry = $this->findMatchingEntry($config['redirects']);
+                if ($this->findMatchingEntry($config['redirects']) !== null) {
+                    $this->page = $entry;
+                    $this->defaultsApplied = true;
+                }
+            }
         }
     }
 
