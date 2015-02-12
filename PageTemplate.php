@@ -70,6 +70,9 @@ class PageTemplate
         $template_dir = $fs->getRealPath($appRoot . '/templates');
         $smarty->setTemplateDir($template_dir);
         $smarty->setCompileDir($fs->getRealPath($appRoot . '/files/smarty'));
+        if (file_exists($appRoot . '/smartyPlugins')) {
+            $smarty->setPluginsDir($appRoot . '/smartyPlugins');
+        }
         $smarty->assign('language', $language);
         $smarty->assign('page', $page);
         $smarty->assign('template_dir', $template_dir);
