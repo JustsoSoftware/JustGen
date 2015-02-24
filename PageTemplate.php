@@ -65,9 +65,60 @@ class PageTemplate
      */
     public function generate($language, $page, FileSystemInterface $fs)
     {
+        $smarty = $this->setupSmarty($language, $page, $fs);
+        $pageTexts = new Text($fs, $page, Bootstrap::getInstance()->getAppRoot(), $this->languages);
+        $smarty->assign(array_map(
+            function($info) {
+                return $info['content'];
+            },
+            $pageTexts->getPageTexts($language)
+        ));
+
+        $previous = set_error_handler(function ()
+            {
+                return true;
+            });
+        $content = $smarty->fetch($this->template . '.tpl');
+        set_error_handler($previous);
+        return $content;
+    }
+
+    /**
+     * Finds variables in template
+     *
+     * @param FileSystemInterface $fs   File system
+     * @param string              $page Name of page
+     * @return string[]                 Names of variables in template
+     */
+    public function getSmartyVars(FileSystemInterface $fs, $page)
+    {
+        $smarty = $this->setupSmarty($this->languages[0], $page, $fs);
+        $vars = array();
+        $previous = set_error_handler(function ($errNo, $errStr) use (&$vars)
+            {
+                if (preg_match('/Undefined index: (.+)/', $errStr, $matches)) {
+                    $vars[$matches[1]] = true;
+                }
+                return true;
+            }, E_NOTICE);
+        $smarty->fetch($this->template . '.tpl');
+        set_error_handler($previous);
+        return array_keys($vars);
+    }
+
+    /**
+     * Sets up a smarty template.
+     *
+     * @param $language
+     * @param $page
+     * @param FileSystemInterface $fs
+     * @return \Smarty
+     */
+    private function setupSmarty($language, $page, FileSystemInterface $fs)
+    {
         $appRoot = Bootstrap::getInstance()->getAppRoot();
         $smarty = new \Smarty;
-        $template_dir = $fs->getRealPath($appRoot . '/templates');
+        $template_dir = $fs->getRealPath(Bootstrap::getInstance()->getAppRoot() . '/templates');
         $smarty->setTemplateDir($template_dir);
         $smarty->setCompileDir($fs->getRealPath($appRoot . '/files/smarty'));
         if (file_exists($appRoot . '/smartyPlugins')) {
@@ -78,16 +129,6 @@ class PageTemplate
         $smarty->assign('template_dir', $template_dir);
         $smarty->assign('base_url', $this->baseUrl);
         $smarty->assign('params', http_build_query($this->params));
-
-        $pageTexts = new Text($fs, $page, $appRoot, $this->languages);
-        $smarty->assign(array_map(
-            function($info) {
-                return $info['content'];
-            },
-            $pageTexts->getPageTexts($language)
-        ));
-
-        $content = $smarty->fetch($this->template . '.tpl');
-        return $content;
+        return $smarty;
     }
 }
