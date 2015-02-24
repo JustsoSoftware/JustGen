@@ -54,23 +54,6 @@ class PageGenerator extends RestService
     }
 
     /**
-     * Searches in $where for an entry matching the pattern in the key part.
-     *
-     * @param string[] $where
-     * @return string|null
-     */
-    private function findMatchingEntry(array $where)
-    {
-        foreach ($where as $name => $entry) {
-            $pattern = str_replace(array('/', '*', '%d'), array('\\/', '.*', '\d'), $name);
-            if (preg_match('/^' . $pattern . '$/', $this->page)) {
-                return $entry;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Searches for a matching page rule and returns the template name.
      *
      * @return string Template name
@@ -79,7 +62,8 @@ class PageGenerator extends RestService
     private function findMatchingPageRule()
     {
         $config = Bootstrap::getInstance()->getConfiguration();
-        $entry = $this->findMatchingEntry($config['pages']);
+        $ruleMatcher = new RuleMatcher($config['pages']);
+        $entry = $ruleMatcher->find($this->page);
         if ($entry !== null) {
             return $entry;
         }
@@ -112,8 +96,9 @@ class PageGenerator extends RestService
             $this->page = preg_replace('/(\.html|\/)$/', '', $parts[2]);
             $config = Bootstrap::getInstance()->getConfiguration();
             if (isset($config['redirects'])) {
-                $entry = $this->findMatchingEntry($config['redirects']);
-                if ($this->findMatchingEntry($config['redirects']) !== null) {
+                $ruleMatcher = new RuleMatcher($config['redirects']);
+                $entry = $ruleMatcher->find($this->page);
+                if ($entry !== null) {
                     $this->page = $entry;
                     $this->defaultsApplied = true;
                 }
