@@ -84,7 +84,7 @@ class PageTemplate
         $processorFile = Bootstrap::getInstance()->getAppRoot() . '/processors/' . $this->template . '.php';
         if (file_exists($processorFile)) {
             require_once($processorFile);
-            $processor = new $this->template;
+            $processor = new $this->template($this->baseUrl);
             $content = $processor->process($content);
         }
 
