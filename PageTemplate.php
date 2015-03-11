@@ -85,7 +85,9 @@ class PageTemplate
         if (file_exists($processorFile)) {
             require_once($processorFile);
             $processor = new $this->template($this->baseUrl);
-            $content = $processor->process($content);
+            if ($processor instanceof ProcessorInterface) {
+                $content = $processor->process($content);
+            }
         }
 
         return $content;
