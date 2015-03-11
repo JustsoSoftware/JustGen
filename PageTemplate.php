@@ -80,6 +80,14 @@ class PageTemplate
             });
         $content = $smarty->fetch($this->template . '.tpl');
         set_error_handler($previous);
+
+        $processorFile = Bootstrap::getInstance()->getAppRoot() . '/processors/' . $this->template . '.php';
+        if (file_exists($processorFile)) {
+            require_once($processorFile);
+            $processor = new $this->template;
+            $content = $processor->process($content);
+        }
+
         return $content;
     }
 
@@ -118,7 +126,7 @@ class PageTemplate
     {
         $appRoot = Bootstrap::getInstance()->getAppRoot();
         $smarty = new \Smarty;
-        $template_dir = $fs->getRealPath(Bootstrap::getInstance()->getAppRoot() . '/templates');
+        $template_dir = $fs->getRealPath($appRoot . '/templates');
         $smarty->setTemplateDir($template_dir);
         $smarty->setCompileDir($fs->getRealPath($appRoot . '/files/smarty'));
         if (file_exists($appRoot . '/smartyPlugins')) {
