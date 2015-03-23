@@ -12,7 +12,6 @@ namespace justso\justgen;
 use justso\justapi\Bootstrap;
 use justso\justapi\InvalidParameterException;
 use justso\justapi\RestService;
-use justso\justapi\SystemEnvironmentInterface;
 
 /**
  * Class PageGenerator
@@ -36,12 +35,8 @@ class PageGenerator extends RestService
             $config = Bootstrap::getInstance()->getConfiguration();
             $languages = $config['languages'];
             $this->extractParams($languages);
-            if ($this->defaultsApplied) {
-                throw new RedirectException('/' . $this->language . '/' . $this->page);
-            } else {
-                $rule = $this->findMatchingPageRule();
-                $this->handlePageRule($rule, $languages);
-            }
+            $rule = $this->findMatchingPageRule();
+            $this->handlePageRule($rule, $languages);
         } catch (RedirectException $e) {
             $destination = $e->getMessage();
             $this->environment->sendHeader("Location: " . $destination);
@@ -122,25 +117,24 @@ class PageGenerator extends RestService
     /**
      * Handles the page rule by generating the content, caching it and sending the result.
      *
-     * @param string   $info
+     * @param string   $rule
      * @param string[] $languages
+     * @throws RedirectException
      */
-    private function handlePageRule($info, $languages)
+    public function handlePageRule($rule, $languages)
     {
-        $templateName = $info;
-        if (strpos($info, 'dynamic:') === 0) {
-            $templateName = substr($info, strlen('dynamic:'));
-            $cacheResults = false;
-        } else {
-            $cacheResults = Bootstrap::getInstance()->getInstallationType() != 'development';
-        }
-        $content = $this->generate($templateName, $languages);
-        if ($cacheResults) {
+        $dynamic = strpos($rule, 'dynamic:') === 0;
+        $template = $dynamic ? substr($rule, strlen('dynamic:')) : $rule;
+        $content = $this->generate($template, $languages);
+        if (!$dynamic && Bootstrap::getInstance()->getInstallationType() != 'development') {
             $this->storeContent($content);
         }
-        $this->environment->sendResult("200 Ok", "text/html; charset=utf-8", $content);
+        if ($this->defaultsApplied && !$dynamic) {
+            throw new RedirectException('/' . $this->language . '/' . $this->page);
+        } else {
+            $this->environment->sendResult("200 Ok", "text/html; charset=utf-8", $content);
+        }
     }
-
     /**
      * Generates the page by applying parameters, variables and texts to the template.
      *
