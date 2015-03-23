@@ -124,15 +124,18 @@ class PageGenerator extends RestService
     public function handlePageRule($rule, $languages)
     {
         $dynamic = strpos($rule, 'dynamic:') === 0;
+        $develop = Bootstrap::getInstance()->getInstallationType() === 'development';
         $template = $dynamic ? substr($rule, strlen('dynamic:')) : $rule;
         $content = $this->generate($template, $languages);
-        if (!$dynamic && Bootstrap::getInstance()->getInstallationType() != 'development') {
+        if (!$dynamic && !$develop) {
             $this->storeContent($content);
         }
         if ($this->defaultsApplied && !$dynamic) {
             throw new RedirectException('/' . $this->language . '/' . $this->page);
         } else {
-            $this->updateSiteMap();
+            if (!$develop) {
+                $this->updateSiteMap();
+            }
             $this->environment->sendResult("200 Ok", "text/html; charset=utf-8", $content);
         }
     }
