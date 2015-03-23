@@ -132,6 +132,7 @@ class PageGenerator extends RestService
         if ($this->defaultsApplied && !$dynamic) {
             throw new RedirectException('/' . $this->language . '/' . $this->page);
         } else {
+            $this->updateSiteMap();
             $this->environment->sendResult("200 Ok", "text/html; charset=utf-8", $content);
         }
     }
@@ -156,5 +157,34 @@ class PageGenerator extends RestService
         $fs = $this->environment->getFileSystem();
         $content = $pageTemplate->generate($this->language, $this->page, $fs);
         return $content;
+    }
+
+    /**
+     * Updates the sitemap.xml file
+     */
+    private function updateSiteMap()
+    {
+        $config = Bootstrap::getInstance()->getConfiguration();
+        $url = $config['environments']['production']['appurl'] . '/' . $this->language . '/' . $this->page;
+        $fs = $this->environment->getFileSystem();
+        $now = (new \DateTime())->format(\DateTime::W3C);
+        $fileName = Bootstrap::getInstance()->getAppRoot() . '/htdocs/sitemap.xml';
+        $sitemap = new \SimpleXMLElement($fs->getFile($fileName));
+        $found = false;
+        foreach ($sitemap->url as $page) {
+            if ($page->loc == $url) {
+                $page->lastmod = $now;
+                $found = true;
+                break;
+            }
+        }
+        if (!$found) {
+            $page = $sitemap->addChild('url');
+            $page->loc = $url;
+            $page->lastmod = $now;
+            $page->changefreq = 'daily';
+            $page->priority = '0.6';
+        }
+        $fs->putFile($fileName, $sitemap->saveXML());
     }
 }
