@@ -31,9 +31,9 @@ class PageGenerator extends RestService
      */
     function getAction()
     {
+        $config = Bootstrap::getInstance()->getConfiguration();
+        $languages = $config['languages'];
         try {
-            $config = Bootstrap::getInstance()->getConfiguration();
-            $languages = $config['languages'];
             $this->extractParams($languages);
             $rule = $this->findMatchingPageRule();
             $this->handlePageRule($rule, $languages);
@@ -44,7 +44,13 @@ class PageGenerator extends RestService
         } catch (\SmartyCompilerException $e) {
             $this->environment->sendResult('500 Server Error', 'text/plain', $e->getMessage());
         } catch (\Exception $e) {
-            $this->environment->sendResult('404 Not found', 'text/plain', "Page '{$this->page}' not found");
+            if (!empty($config['errorpages']['404'])) {
+                $this->page = $config['errorpages']['404'];
+                $this->defaultsApplied = false;
+                $this->handlePageRule($config['pages'][$this->page], $languages, "404 Not found");
+            } else {
+                $this->environment->sendResult('404 Not found', 'text/plain', "Page '{$this->page}' not found");
+            }
         }
     }
 
@@ -119,9 +125,10 @@ class PageGenerator extends RestService
      *
      * @param string   $rule
      * @param string[] $languages
+     * @param string   $okCode
      * @throws RedirectException
      */
-    public function handlePageRule($rule, $languages)
+    public function handlePageRule($rule, $languages, $okCode = '200 Ok')
     {
         $dynamic = strpos($rule, 'dynamic:') === 0;
         $develop = Bootstrap::getInstance()->getInstallationType() === 'development';
@@ -136,7 +143,7 @@ class PageGenerator extends RestService
             if (!$develop) {
                 $this->updateSiteMap();
             }
-            $this->environment->sendResult("200 Ok", "text/html; charset=utf-8", $content);
+            $this->environment->sendResult($okCode, "text/html; charset=utf-8", $content);
         }
     }
     /**
@@ -158,8 +165,7 @@ class PageGenerator extends RestService
         });
         $pageTemplate = new PageTemplate($templateName, $languages, $baseUrl, $params);
         $fs = $this->environment->getFileSystem();
-        $content = $pageTemplate->generate($this->language, $this->page, $fs);
-        return $content;
+        return $pageTemplate->generate($this->language, $this->page, $fs);
     }
 
     /**
