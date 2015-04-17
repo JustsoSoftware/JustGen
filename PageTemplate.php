@@ -138,6 +138,7 @@ class PageTemplate
         $smarty->assign('page', $page);
         $smarty->assign('template_dir', $template_dir);
         $smarty->assign('base_url', $this->baseUrl);
+        $smarty->assign('base_dir', $appRoot);
         $smarty->assign('params', http_build_query($this->params));
         return $smarty;
     }
