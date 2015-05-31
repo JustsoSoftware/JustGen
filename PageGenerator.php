@@ -37,6 +37,7 @@ class PageGenerator extends RestService
             $this->extractParams($languages);
             $rule = $this->findMatchingPageRule();
             $this->handlePageRule($rule, $languages);
+            $this->updateSiteMap();
         } catch (RedirectException $e) {
             $destination = $e->getMessage();
             $this->environment->sendHeader("Location: " . $destination);
@@ -140,9 +141,6 @@ class PageGenerator extends RestService
         if ($this->defaultsApplied && !$dynamic) {
             throw new RedirectException('/' . $this->language . '/' . $this->page);
         } else {
-            if (!$develop) {
-                $this->updateSiteMap();
-            }
             $this->environment->sendResult($okCode, "text/html; charset=utf-8", $content);
         }
     }
