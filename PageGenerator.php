@@ -192,6 +192,10 @@ class PageGenerator extends RestService
             $page->changefreq = 'daily';
             $page->priority = '0.6';
         }
-        $fs->putFile($fileName, $sitemap->saveXML());
+        $dom = new \DOMDocument("1.0");
+        $dom->preserveWhiteSpace = false;
+        $dom->formatOutput = true;
+        $dom->loadXML($sitemap->asXML());
+        $fs->putFile($fileName, $dom->saveXML());
     }
 }
