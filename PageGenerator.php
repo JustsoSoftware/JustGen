@@ -36,22 +36,26 @@ class PageGenerator extends RestService
         try {
             $this->extractParams($languages);
             $rule = $this->findMatchingPageRule();
-            $this->handlePageRule($rule, $languages);
+            $content = $this->handlePageRule($rule, $languages);
             $this->updateSiteMap();
+            $this->environment->sendResult("200 Ok", "text/html; charset=utf-8", $content);
         } catch (RedirectException $e) {
             $destination = $e->getMessage();
             $this->environment->sendHeader("Location: " . $destination);
             $this->environment->sendResult("301 Moved Permanently", 'text/plain', "Location: " . $destination);
-        } catch (\SmartyCompilerException $e) {
-            $this->environment->sendResult('500 Server Error', 'text/plain', $e->getMessage());
-        } catch (\Exception $e) {
+        } catch (NotFoundException $e) {
             if (!empty($config['errorpages']['404'])) {
                 $this->page = $config['errorpages']['404'];
                 $this->defaultsApplied = false;
-                $this->handlePageRule($config['pages'][$this->page], $languages, "404 Not found");
+                $content = $this->handlePageRule($config['pages'][$this->page], $languages);
+                $mime = 'text/html';
             } else {
-                $this->environment->sendResult('404 Not found', 'text/plain', "Page '{$this->page}' not found");
+                $content = "Page '{$this->page}' not found";
+                $mime = 'text/plain';
             }
+            $this->environment->sendResult("404 Not found", "$mime; charset=utf-8", $content);
+        } catch (\Exception $e) {
+            $this->environment->sendResult('500 Server Error', 'text/plain', $e->getMessage());
         }
     }
 
@@ -69,7 +73,7 @@ class PageGenerator extends RestService
         if ($entry !== null) {
             return $entry;
         }
-        throw new \Exception('No page rule defined');
+        throw new NotFoundException('No page rule defined');
     }
 
     /**
@@ -127,6 +131,7 @@ class PageGenerator extends RestService
      * @param string   $rule
      * @param string[] $languages
      * @param string   $okCode
+     * @return string  content of page
      * @throws RedirectException
      */
     public function handlePageRule($rule, $languages, $okCode = '200 Ok')
@@ -140,9 +145,8 @@ class PageGenerator extends RestService
         }
         if ($this->defaultsApplied && !$dynamic) {
             throw new RedirectException('/' . $this->language . '/' . $this->page);
-        } else {
-            $this->environment->sendResult($okCode, "text/html; charset=utf-8", $content);
         }
+        return $content;
     }
     /**
      * Generates the page by applying parameters, variables and texts to the template.
