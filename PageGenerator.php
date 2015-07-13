@@ -84,23 +84,24 @@ class PageGenerator extends RestService
      */
     private function extractParams($languages)
     {
+        $config = Bootstrap::getInstance()->getConfiguration();
         $server = $this->environment->getRequestHelper()->getServerParams();
         preg_match('/^\/?(..)?\/(.*)?/', $server['REDIRECT_URL'], $parts);
 
         $this->language = $languages[0];
-        if (empty($parts[1])) {
+        $fallback = !empty($config['fallbackForUnknownLanguage']);
+        if (empty($parts[1]) || !in_array($parts[1], $languages) && $fallback) {
             $this->defaultsApplied = true;
         } else {
-            $this->language = $parts[1];
-            if (!in_array($this->language, $languages)) {
+            if (!in_array($parts[1], $languages)) {
                 throw new InvalidParameterException("Unknown language");
             }
+            $this->language = $parts[1];
         }
         if (empty($parts[2])) {
             $this->defaultsApplied = true;
         } else {
             $this->page = preg_replace('/(\.html|\/)$/', '', $parts[2]);
-            $config = Bootstrap::getInstance()->getConfiguration();
             if (isset($config['redirects'])) {
                 $ruleMatcher = new RuleMatcher($config['redirects']);
                 $entry = $ruleMatcher->find($this->page);
