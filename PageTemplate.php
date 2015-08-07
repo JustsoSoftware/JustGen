@@ -68,16 +68,16 @@ class PageTemplate
         $smarty = $this->setupSmarty($language, $page, $fs);
         $pageTexts = new Text($fs, $page, Bootstrap::getInstance()->getAppRoot(), $this->languages);
         $smarty->assign(array_map(
-            function($info) {
+            function ($info)
+            {
                 return $info['content'];
             },
             $pageTexts->getPageTexts($language)
         ));
 
-        $previous = set_error_handler(function ()
-            {
-                return true;
-            });
+        $previous = set_error_handler(function () {
+            return true;
+        });
         $content = $smarty->fetch($this->template . '.tpl');
         set_error_handler($previous);
 
@@ -104,13 +104,12 @@ class PageTemplate
     {
         $smarty = $this->setupSmarty($this->languages[0], $page, $fs);
         $vars = array();
-        $previous = set_error_handler(function ($errNo, $errStr) use (&$vars)
-            {
-                if (preg_match('/Undefined index: (.+)/', $errStr, $matches)) {
-                    $vars[$matches[1]] = true;
-                }
-                return true;
-            }, E_NOTICE);
+        $previous = set_error_handler(function ($errNo, $errStr) use (&$vars) {
+            if (preg_match('/Undefined index: (.+)/', $errStr, $matches)) {
+                $vars[$matches[1]] = true;
+            }
+            return true;
+        }, E_NOTICE);
         $smarty->fetch($this->template . '.tpl');
         set_error_handler($previous);
         return array_keys($vars);

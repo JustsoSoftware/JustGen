@@ -29,7 +29,7 @@ class PageGenerator extends RestService
     /**
      * Service to generate a page
      */
-    function getAction()
+    public function getAction()
     {
         $config = Bootstrap::getInstance()->getConfiguration();
         $languages = $config['languages'];
@@ -161,7 +161,7 @@ class PageGenerator extends RestService
         $server = $this->environment->getRequestHelper()->getServerParams();
         $baseUrl = 'http://' . $server['HTTP_HOST'];
         $rawParams = $this->environment->getRequestHelper()->getAllParams();
-        $params = array_filter($rawParams, function() use (&$rawParams) {
+        $params = array_filter($rawParams, function () use (&$rawParams) {
             $key = key($rawParams);
             next($rawParams);
             return strpos($key, '_') !== 0;
