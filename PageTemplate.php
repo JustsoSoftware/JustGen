@@ -68,8 +68,7 @@ class PageTemplate
         $smarty = $this->setupSmarty($language, $page, $fs);
         $pageTexts = new Text($fs, $page, Bootstrap::getInstance()->getAppRoot(), $this->languages);
         $smarty->assign(array_map(
-            function ($info)
-            {
+            function ($info) {
                 return $info['content'];
             },
             $pageTexts->getPageTexts($language)

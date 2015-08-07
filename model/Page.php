@@ -20,7 +20,7 @@ class Page extends \justso\justtexts\model\Page
 {
     protected $template;
 
-    public function __construct($id=null, $value=null, RequestHelper $request=null)
+    public function __construct($id = null, $value = null, RequestHelper $request = null)
     {
         if ($request !== null) {
             $this->name = $request->getIdentifierParam('name');
