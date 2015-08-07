@@ -177,30 +177,32 @@ class PageGenerator extends RestService
     private function updateSiteMap()
     {
         $config = Bootstrap::getInstance()->getConfiguration();
-        $url = $config['environments']['production']['appurl'] . '/' . $this->language . '/' . $this->page;
-        $fs = $this->environment->getFileSystem();
-        $now = (new \DateTime())->format(\DateTime::W3C);
-        $fileName = Bootstrap::getInstance()->getAppRoot() . '/htdocs/sitemap.xml';
-        $sitemap = new \SimpleXMLElement($fs->getFile($fileName));
-        $found = false;
-        foreach ($sitemap->url as $page) {
-            if ($page->loc == $url) {
-                $page->lastmod = $now;
-                $found = true;
-                break;
+        if (isset($config['environments']['production'])) {
+            $url = $config['environments']['production']['appurl'] . '/' . $this->language . '/' . $this->page;
+            $fs = $this->environment->getFileSystem();
+            $now = (new \DateTime())->format(\DateTime::W3C);
+            $fileName = Bootstrap::getInstance()->getAppRoot() . '/htdocs/sitemap.xml';
+            $sitemap = new \SimpleXMLElement($fs->getFile($fileName));
+            $found = false;
+            foreach ($sitemap->url as $page) {
+                if ($page->loc == $url) {
+                    $page->lastmod = $now;
+                    $found = true;
+                    break;
+                }
             }
+            if (!$found) {
+                $page = $sitemap->addChild('url');
+                $page->loc = $url;
+                $page->lastmod = $now;
+                $page->changefreq = 'daily';
+                $page->priority = '0.6';
+            }
+            $dom = new \DOMDocument("1.0");
+            $dom->preserveWhiteSpace = false;
+            $dom->formatOutput = true;
+            $dom->loadXML($sitemap->asXML());
+            $fs->putFile($fileName, $dom->saveXML());
         }
-        if (!$found) {
-            $page = $sitemap->addChild('url');
-            $page->loc = $url;
-            $page->lastmod = $now;
-            $page->changefreq = 'daily';
-            $page->priority = '0.6';
-        }
-        $dom = new \DOMDocument("1.0");
-        $dom->preserveWhiteSpace = false;
-        $dom->formatOutput = true;
-        $dom->loadXML($sitemap->asXML());
-        $fs->putFile($fileName, $dom->saveXML());
     }
 }

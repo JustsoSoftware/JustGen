@@ -69,7 +69,7 @@ class PageGeneratorTest extends ServiceTestBase
 
         $header = array(
             'HTTP/1.0 404 Not found',
-            'Content-Type: text/plain',
+            'Content-Type: text/plain; charset=utf-8',
         );
         $this->assertEquals($header, $env->getResponseHeader());
         $this->assertSame("Page 'non-existing' not found", $env->getResponseContent());
