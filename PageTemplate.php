@@ -81,8 +81,8 @@ class PageTemplate
         set_error_handler($previous);
 
         $processorFile = Bootstrap::getInstance()->getAppRoot() . '/processors/' . $this->template . '.php';
-        if (file_exists($processorFile)) {
-            require_once($processorFile);
+        if ($fs->fileExists($processorFile)) {
+            require_once($fs->getRealPath($processorFile));
             $processor = new $this->template($this->baseUrl);
             if ($processor instanceof ProcessorInterface) {
                 $content = $processor->process($content);

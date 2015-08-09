@@ -41,11 +41,38 @@ class PageTemplateTest extends \PHPUnit_Framework_TestCase
      */
     public function testGenerate()
     {
-        $fs = new FileSystemSandbox();
-        $fs->putFile('/test-root/templates/testTemplate.tpl', 'prefix {$test} postfix');
-        $fs->putFile('/test-root/htdocs/nls/abc.js', 'define({"root": {"test": "Hallo Welt!"}});');
+        $fs = $this->setupFileSystem();
         $template = new PageTemplate('testTemplate', array('de'), '/test-root');
         $result = $template->generate('de', 'abc', $fs);
         $this->assertSame('prefix Hallo Welt! postfix', $result);
+    }
+
+    public function testWithProcessor()
+    {
+        $fs = $this->setupFileSystem();
+        $template = new PageTemplate('testTemplate', array('de'), '/test-root');
+        $fs->putFile('/test-root/processors/testTemplate.php', file_get_contents(__DIR__ . '/Processor.php'));
+        $result = $template->generate('de', 'abc', $fs);
+        $this->assertSame('Processed', $result);
+    }
+
+    public function testGetSmartyVars()
+    {
+        $fs = $this->setupFileSystem();
+        $template = new PageTemplate('testTemplate', array('de'), '/test-root');
+        $result = $template->getSmartyVars($fs, 'abc');
+        $this->assertSame(array('test'), $result);
+    }
+
+    /**
+     * @return FileSystemSandbox
+     */
+    private function setupFileSystem()
+    {
+        $fs = new FileSystemSandbox();
+        $fs->putFile('/test-root/templates/testTemplate.tpl', 'prefix {$test} postfix');
+        $fs->putFile('/test-root/htdocs/nls/abc.js', 'define({"root": {"test": "Hallo Welt!"}});');
+        $fs->putFile('/test-root/smartyPlugins/testPlugin.php', '');
+        return $fs;
     }
 }
