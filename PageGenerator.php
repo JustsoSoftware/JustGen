@@ -12,6 +12,7 @@ namespace justso\justgen;
 use justso\justapi\Bootstrap;
 use justso\justapi\InvalidParameterException;
 use justso\justapi\RestService;
+use justso\justapi\SystemEnvironmentInterface;
 
 /**
  * Class PageGenerator
@@ -25,6 +26,12 @@ class PageGenerator extends RestService
     private $language;
 
     private $page = 'index';
+
+    public function __construct(SystemEnvironmentInterface $environment, $siteMapEnv = 'production')
+    {
+        parent::__construct($environment);
+        $this->siteMapEnv = $siteMapEnv;
+    }
 
     /**
      * Service to generate a page
@@ -177,8 +184,8 @@ class PageGenerator extends RestService
     private function updateSiteMap()
     {
         $config = Bootstrap::getInstance()->getConfiguration();
-        if (isset($config['environments']['production'])) {
-            $url = $config['environments']['production']['appurl'] . '/' . $this->language . '/' . $this->page;
+        if (isset($config['environments'][$this->siteMapEnv])) {
+            $url = $config['environments'][$this->siteMapEnv]['appurl'] . '/' . $this->language . '/' . $this->page;
             $fs = $this->environment->getFileSystem();
             $now = (new \DateTime())->format(\DateTime::W3C);
             $fileName = Bootstrap::getInstance()->getAppRoot() . '/htdocs/sitemap.xml';
