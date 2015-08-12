@@ -10,7 +10,7 @@
 namespace justso\justgen\test;
 
 use justso\justapi\Bootstrap;
-use justso\justapi\test\FileSystemSandbox;
+use justso\justapi\testutil\FileSystemSandbox;
 use justso\justgen\PageTemplate;
 
 /**

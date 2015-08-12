@@ -10,10 +10,10 @@
 namespace justso\justgen\test;
 
 use justso\justapi\Bootstrap;
-use justso\justapi\test\ServiceTestBase;
 use justso\justapi\FileSystemInterface;
-use justso\justapi\test\FileSystemSandbox;
-use justso\justapi\test\TestEnvironment;
+use justso\justapi\testutil\ServiceTestBase;
+use justso\justapi\testutil\FileSystemSandbox;
+use justso\justapi\testutil\TestEnvironment;
 use justso\justgen\PageGenerator;
 
 /**
