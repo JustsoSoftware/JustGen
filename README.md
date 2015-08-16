@@ -12,6 +12,14 @@ really fast web pages in multiple languages.
 
 The module utilizes Apache rewriting, the JustAPI and the JustTexts package.
 
+## Installation
+
+### Composer
+  composer require justso/justgen:1.*
+
+### git
+  git clone git://github.com/JustsoSoftware/JustGen.git vendor/justso/justgen
+  
 ## Setup
 
 Checkout in vendor/justso/justgen and append a line
@@ -30,7 +38,7 @@ To make the automatic page generation work, you need to extend your Apache confi
     RewriteEngine On
     RewriteCond %{SCRIPT_FILENAME} !-f
     RewriteCond %{SCRIPT_FILENAME} !-d
-    RewriteRule ^(.*)$ /api/justgen/ [L]
+    RewriteRule ^(.*)$ /api/justgen/ [L,PT,QSA]
 
     # Handle missing DirectoryIndex file via JustGen - the rewrite rule wouldn't work here
     ErrorDocument 403 /api/justgen/
@@ -42,6 +50,42 @@ After reloading your Apache, it should work.
 ## Templates
 
 Templates are stored in a /templates folder and are filled by the generator with help from Smarty http://www.smarty.net
+
+templates are selected according to a requested page via rules defined in the config.json file.
+In the section "pages" you can define which page name uses which template file, for example:
+
+```
+{
+  ...
+  "pages": {
+    "my-page": "ExampleTemplate"
+  }
+  ...
+}
+```
+
+The generator checks if there is a page rule defining a template, and then uses the template to generate
+the actual HTMl. It is sended then back to the requesting browser and additionally used to generate a file
+in the htdocs folder, so that consecutive accesses find this file and the content need not to be generated
+again.
+
+So, how about dynamic content? Dynamic content should be handled differently, for example by loading it
+via AJAX requests and not be used in a fixed, generated way.
+
+## Redirects
+
+Sometimes, you need to redirect URLs to new ones. Therefore, you can configure the generator to map an old
+URL to a new one. This is done by adding a section "redirects" to config.json like this:
+
+```
+{
+  ...
+  "redirects": {
+    "old-page": "new-page"
+  }
+  ...
+}
+```
 
 ## Support & More
 
