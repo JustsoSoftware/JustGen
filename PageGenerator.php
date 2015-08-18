@@ -11,6 +11,7 @@ namespace justso\justgen;
 
 use justso\justapi\Bootstrap;
 use justso\justapi\InvalidParameterException;
+use justso\justapi\NotFoundException;
 use justso\justapi\RestService;
 use justso\justapi\SystemEnvironmentInterface;
 
