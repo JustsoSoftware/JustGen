@@ -85,7 +85,7 @@ class PageTemplate
             require_once($fs->getRealPath($processorFile));
             $processor = new $this->template($this->baseUrl);
             if ($processor instanceof ProcessorInterface) {
-                $content = $processor->process($content);
+                $content = $processor->process($content, $page);
             }
         }
 

@@ -18,7 +18,8 @@ interface ProcessorInterface
      * Process given content.
      *
      * @param string $content
+     * @param string $pageName
      * @return string Processed content
      */
-    public function process($content);
+    public function process($content, $pageName);
 }
