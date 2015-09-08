@@ -11,7 +11,7 @@ class testTemplate implements \justso\justgen\ProcessorInterface
     {
     }
 
-    public function process($html)
+    public function process($html, $pageName)
     {
         return "Processed";
     }
