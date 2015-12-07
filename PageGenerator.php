@@ -167,7 +167,7 @@ class PageGenerator extends RestService
     private function generate($templateName, $languages)
     {
         $server = $this->environment->getRequestHelper()->getServerParams();
-        $baseUrl = 'http://' . $server['HTTP_HOST'];
+        $baseUrl = 'http' . (!empty($server['HTTPS']) ? 's' : '') . '://' . $server['HTTP_HOST'];
         $rawParams = $this->environment->getRequestHelper()->getAllParams();
         $params = array_filter($rawParams, function () use (&$rawParams) {
             $key = key($rawParams);

@@ -48,9 +48,13 @@ class PageGeneratorTest extends ServiceTestBase
         Bootstrap::getInstance()->resetConfiguration();
     }
 
-    private function createServerParams($redirectUrl)
+    private function createServerParams($redirectUrl, $secure = false)
     {
-        return array('HTTP_HOST' => 'example.com', 'REDIRECT_URL' => $redirectUrl);
+        $params = [ 'HTTP_HOST' => 'example.com', 'REDIRECT_URL' => $redirectUrl ];
+        if ($secure) {
+            $params['HTTPS'] = 'on';
+        }
+        return $params;
     }
 
     public function testGetAction()
@@ -168,12 +172,28 @@ class PageGeneratorTest extends ServiceTestBase
      * @param TestEnvironment $env
      * @return FileSystemInterface
      */
-    private function setupPageFiles(TestEnvironment $env)
+    private function setupPageFiles(TestEnvironment $env, $template = 'prefix {$test} postfix')
     {
         $fs = $env->getFileSystem();
-        $fs->putFile('/test-root/templates/testTemplate.tpl', 'prefix {$test} postfix');
+        $fs->putFile('/test-root/templates/testTemplate.tpl', $template);
         $fs->putFile('/test-root/templates/errorTemplate.tpl', 'custom error page');
         $fs->putFile('/test-root/htdocs/nls/index.js', 'define({"root": {"test": "Hallo Welt!"}});');
         return $fs;
+    }
+
+    public function testHTTPS() {
+        $env = $this->createTestEnvironment();
+        $env->getRequestHelper()->set(array(), $this->createServerParams('de/index.html', true));
+        $this->setupPageFiles($env, '{$base_url}');
+
+        $service = new PageGenerator($env);
+        $service->getAction();
+
+        $header = array(
+            'HTTP/1.0 200 Ok',
+            'Content-Type: text/html; charset=utf-8',
+        );
+        $this->assertEquals($header, $env->getResponseHeader());
+        $this->assertSame('https://example.com', $env->getResponseContent());
     }
 }
