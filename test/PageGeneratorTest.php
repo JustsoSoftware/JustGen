@@ -181,7 +181,8 @@ class PageGeneratorTest extends ServiceTestBase
         return $fs;
     }
 
-    public function testHTTPS() {
+    public function testHTTPS()
+    {
         $env = $this->createTestEnvironment();
         $env->getRequestHelper()->set(array(), $this->createServerParams('de/index.html', true));
         $this->setupPageFiles($env, '{$base_url}');
