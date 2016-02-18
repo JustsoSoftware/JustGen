@@ -124,7 +124,8 @@ class PageTemplate
      */
     private function setupSmarty($language, $page, FileSystemInterface $fs)
     {
-        $appRoot = Bootstrap::getInstance()->getAppRoot();
+        $bootstrap = Bootstrap::getInstance();
+        $appRoot = $bootstrap->getAppRoot();
         $smarty = new \Smarty;
         $template_dir = $fs->getRealPath($appRoot . '/templates');
         $smarty->setTemplateDir($template_dir);
@@ -138,6 +139,7 @@ class PageTemplate
         $smarty->assign('base_url', $this->baseUrl);
         $smarty->assign('base_dir', $appRoot);
         $smarty->assign('params', http_build_query($this->params));
+        $smarty->assign('instType', $bootstrap->getInstallationType());
         return $smarty;
     }
 }
