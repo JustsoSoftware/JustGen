@@ -19,6 +19,8 @@ use justso\justgen\PageTemplate;
  */
 class PageTemplateTest extends \PHPUnit_Framework_TestCase
 {
+    protected $env;
+
     protected function setUp()
     {
         parent::setUp();

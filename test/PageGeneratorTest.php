@@ -25,6 +25,7 @@ class PageGeneratorTest extends ServiceTestBase
     protected function setUp()
     {
         parent::setUp();
+        $this->createTestEnvironment();
         $config = array(
             'environments' => array('test' => array(
                 'approot' => '/test-root',
@@ -39,13 +40,7 @@ class PageGeneratorTest extends ServiceTestBase
                 'index2' => 'index',
             ),
         );
-        Bootstrap::getInstance()->setTestConfiguration('/test-root', $config);
-    }
-
-    protected function tearDown()
-    {
-        parent::tearDown();
-        Bootstrap::getInstance()->resetConfiguration();
+        $this->env->getBootstrap()->setTestConfiguration('/test-root', $config);
     }
 
     private function createServerParams($redirectUrl, $secure = false)
@@ -59,54 +54,51 @@ class PageGeneratorTest extends ServiceTestBase
 
     public function testGetAction()
     {
-        $env = $this->createTestEnvironment();
-        $env->getRequestHelper()->set(array(), $this->createServerParams('de/index.html'));
-        $this->setupPageFiles($env);
+        $this->env->getRequestHelper()->set(array(), $this->createServerParams('de/index.html'));
+        $this->setupPageFiles($this->env);
 
-        $service = new PageGenerator($env);
+        $service = new PageGenerator($this->env);
         $service->getAction();
 
         $header = array(
             'HTTP/1.0 200 Ok',
             'Content-Type: text/html; charset=utf-8',
         );
-        $this->assertEquals($header, $env->getResponseHeader());
-        $this->assertSame('prefix Hallo Welt! postfix', $env->getResponseContent());
+        $this->assertEquals($header, $this->env->getResponseHeader());
+        $this->assertSame('prefix Hallo Welt! postfix', $this->env->getResponseContent());
     }
 
     public function testAccessNonExistingPage($type = 'text/plain', $msg = "Page 'non-existing' not found")
     {
-        $env = $this->createTestEnvironment();
-        $env->getRequestHelper()->set(array(), $this->createServerParams('de/non-existing.html'));
-        $this->setupPageFiles($env);
+        $this->env->getRequestHelper()->set(array(), $this->createServerParams('de/non-existing.html'));
+        $this->setupPageFiles($this->env);
 
-        $service = new PageGenerator($env);
+        $service = new PageGenerator($this->env);
         $service->getAction();
 
+        $this->assertSame($msg, $this->env->getResponseContent());
         $header = array(
             'HTTP/1.0 404 Not found',
             'Content-Type: ' . $type . '; charset=utf-8',
         );
-        $this->assertEquals($header, $env->getResponseHeader());
-        $this->assertSame($msg, $env->getResponseContent());
+        $this->assertEquals($header, $this->env->getResponseHeader());
     }
 
     public function testCustomErrorPage()
     {
-        $bootstrap = Bootstrap::getInstance();
+        $bootstrap = $this->env->getBootstrap();
         $config = $bootstrap->getConfiguration();
         $config['errorpages'] = array('404' => 'error404');
-        $bootstrap->setTestConfiguration('/test-root', $config);
+        $bootstrap->setTestConfiguration(null, $config);
         $this->testAccessNonExistingPage('text/html', 'custom error page');
     }
 
     public function testAccessWithDefaults()
     {
-        $env = $this->createTestEnvironment();
-        $env->getRequestHelper()->set(array(), $this->createServerParams(''));
-        $this->setupPageFiles($env);
+        $this->env->getRequestHelper()->set(array(), $this->createServerParams(''));
+        $this->setupPageFiles($this->env);
 
-        $service = new PageGenerator($env);
+        $service = new PageGenerator($this->env);
         $service->getAction();
 
         $header = array(
@@ -114,16 +106,15 @@ class PageGeneratorTest extends ServiceTestBase
             'HTTP/1.0 301 Moved Permanently',
             'Content-Type: text/plain'
         );
-        $this->assertEquals($header, $env->getResponseHeader());
+        $this->assertEquals($header, $this->env->getResponseHeader());
     }
 
     public function testRedirects()
     {
-        $env = $this->createTestEnvironment();
-        $env->getRequestHelper()->set(array(), $this->createServerParams('de/index2.html'));
-        $this->setupPageFiles($env);
+        $this->env->getRequestHelper()->set(array(), $this->createServerParams('de/index2.html'));
+        $this->setupPageFiles($this->env);
 
-        $service = new PageGenerator($env);
+        $service = new PageGenerator($this->env);
         $service->getAction();
 
         $header = array(
@@ -131,37 +122,35 @@ class PageGeneratorTest extends ServiceTestBase
             'HTTP/1.0 301 Moved Permanently',
             'Content-Type: text/plain',
         );
-        $this->assertEquals($header, $env->getResponseHeader());
-        $this->assertSame('Location: /de/index', $env->getResponseContent());
+        $this->assertEquals($header, $this->env->getResponseHeader());
+        $this->assertSame('Location: /de/index', $this->env->getResponseContent());
     }
 
     public function testUnknownLanguage()
     {
-        $env = $this->createTestEnvironment();
-        $env->getRequestHelper()->set(array(), $this->createServerParams('en/index.html'));
-        $this->setupPageFiles($env);
+        $this->env->getRequestHelper()->set(array(), $this->createServerParams('en/index.html'));
+        $this->setupPageFiles($this->env);
 
-        $service = new PageGenerator($env);
+        $service = new PageGenerator($this->env);
         $service->getAction();
 
         $header = array(
             'HTTP/1.0 500 Server Error',
             'Content-Type: text/plain',
         );
-        $this->assertEquals($header, $env->getResponseHeader());
-        $this->assertSame("Unknown language", $env->getResponseContent());
+        $this->assertEquals($header, $this->env->getResponseHeader());
+        $this->assertSame("Unknown language", $this->env->getResponseContent());
     }
 
     public function testSiteMap()
     {
-        $env = $this->createTestEnvironment();
-        $env->getRequestHelper()->set(array(), $this->createServerParams('de/index.html'));
+        $this->env->getRequestHelper()->set(array(), $this->createServerParams('de/index.html'));
         /** @var FileSystemSandbox $fs */
-        $fs = $this->setupPageFiles($env);
+        $fs = $this->setupPageFiles($this->env);
         $sitemapFile = '/test-root/htdocs/sitemap.xml';
         $fs->putFile($sitemapFile, file_get_contents(__DIR__ . '/sitemap.xml'));
 
-        $service = new PageGenerator($env, 'test');
+        $service = new PageGenerator($this->env, 'test');
         $service->getAction();
         $this->assertTrue(in_array('putFile(' . $sitemapFile . ')', $fs->getProtocol()));
         $sitemap = $fs->getFile($sitemapFile);
@@ -183,18 +172,17 @@ class PageGeneratorTest extends ServiceTestBase
 
     public function testHTTPS()
     {
-        $env = $this->createTestEnvironment();
-        $env->getRequestHelper()->set(array(), $this->createServerParams('de/index.html', true));
-        $this->setupPageFiles($env, '{$base_url}');
+        $this->env->getRequestHelper()->set(array(), $this->createServerParams('de/index.html', true));
+        $this->setupPageFiles($this->env, '{$base_url}');
 
-        $service = new PageGenerator($env);
+        $service = new PageGenerator($this->env);
         $service->getAction();
 
         $header = array(
             'HTTP/1.0 200 Ok',
             'Content-Type: text/html; charset=utf-8',
         );
-        $this->assertEquals($header, $env->getResponseHeader());
-        $this->assertSame('https://example.com', $env->getResponseContent());
+        $this->assertEquals($header, $this->env->getResponseHeader());
+        $this->assertSame('https://example.com', $this->env->getResponseContent());
     }
 }

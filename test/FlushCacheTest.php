@@ -20,26 +20,15 @@ use justso\justgen\FlushCache;
  */
 class FlushCacheTest extends ServiceTestBase
 {
-    protected function setUp()
+    public function testGetAction()
     {
-        parent::setUp();
+        $env = $this->createTestEnvironment();
         $config = array(
             'environments' => array('test' => array('approot' => '/test-root')),
             'languages' => array('de'),
             'pages' => array('index' => 'testTemplate')
         );
-        Bootstrap::getInstance()->setTestConfiguration('/test-root', $config);
-    }
-
-    protected function tearDown()
-    {
-        parent::tearDown();
-        Bootstrap::getInstance()->resetConfiguration();
-    }
-
-    public function testGetAction()
-    {
-        $env = $this->createTestEnvironment();
+        $this->env->getBootstrap()->setTestConfiguration('/test-root', $config);
         /** @var FileSystemSandbox $fs */
         $fs = $env->getFileSystem();
         $fs->putFile('/test-root/htdocs/de/index.html', 'German content');
