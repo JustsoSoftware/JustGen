@@ -45,7 +45,14 @@ To make the automatic page generation work, you need to extend your Apache confi
   </Directory>
 ```
 
-After reloading your Apache, it should work.
+After reloading your Apache, pages can be generated.
+
+To make JustTexts frontend work with JustGen, you need to overwrite two entries in your dependencies.php file:
+
+```
+  '\justso\justtexts\Text'    => '\justso\justgen\model\Text',
+  '\justso\justtexts\Page'    => '\justso\justgen\model\Page',
+```
 
 ## Templates
 

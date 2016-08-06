@@ -16,7 +16,7 @@ use justso\justapi\RequestHelper;
  *
  * @package justso\justgen\model
  */
-class Page extends \justso\justtexts\model\Page
+class Page extends \justso\justtexts\Page
 {
     protected $template;
 

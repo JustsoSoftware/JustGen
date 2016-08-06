@@ -10,7 +10,6 @@
 namespace justso\justgen;
 
 use justso\justapi\SystemEnvironmentInterface;
-use justso\justtexts\model\Text;
 
 require dirname(dirname(__DIR__)) . '/autoload.php';
 
@@ -60,7 +59,8 @@ class PageTemplate
         $fs = $env->getFileSystem();
         $appRoot = $env->getBootstrap()->getAppRoot();
         $smarty = $this->setupSmarty($language, $page, $env);
-        $pageTexts = new Text($fs, $page, $appRoot, $this->languages);
+        /** @var \justso\justtexts\TextInterface $pageTexts */
+        $pageTexts = $env->getDIC()->get('\justso\justtexts\Text', [$env, $page]);
         $smarty->assign(array_map(
             function ($info) {
                 return $info['content'];
