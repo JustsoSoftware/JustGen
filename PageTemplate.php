@@ -9,8 +9,7 @@
 
 namespace justso\justgen;
 
-use justso\justapi\Bootstrap;
-use justso\justapi\FileSystemInterface;
+use justso\justapi\SystemEnvironmentInterface;
 use justso\justtexts\model\Text;
 
 require dirname(dirname(__DIR__)) . '/autoload.php';
@@ -32,26 +31,19 @@ class PageTemplate
     private $languages;
 
     /**
-     * @var string
-     */
-    private $baseUrl;
-
-    /**
      * @var array
      */
     private $params;
 
     /**
-     * @param string   $template
+     * @param string $template
      * @param string[] $languages
-     * @param string   $baseUrl
-     * @param array    $params
+     * @param array $params
      */
-    public function __construct($template, $languages, $baseUrl, $params = array())
+    public function __construct($template, $languages, $params = [])
     {
         $this->template  = $template;
         $this->languages = $languages;
-        $this->baseUrl   = $baseUrl;
         $this->params    = $params;
     }
 
@@ -60,13 +52,15 @@ class PageTemplate
      *
      * @param string $language
      * @param string $page
-     * @param \justso\justapi\FileSystemInterface $fs
+     * @param SystemEnvironmentInterface $env
      * @return string
      */
-    public function generate($language, $page, FileSystemInterface $fs)
+    public function generate($language, $page, SystemEnvironmentInterface $env)
     {
-        $smarty = $this->setupSmarty($language, $page, $fs);
-        $pageTexts = new Text($fs, $page, Bootstrap::getInstance()->getAppRoot(), $this->languages);
+        $fs = $env->getFileSystem();
+        $appRoot = $env->getBootstrap()->getAppRoot();
+        $smarty = $this->setupSmarty($language, $page, $env);
+        $pageTexts = new Text($fs, $page, $appRoot, $this->languages);
         $smarty->assign(array_map(
             function ($info) {
                 return $info['content'];
@@ -80,10 +74,10 @@ class PageTemplate
         $content = $smarty->fetch($this->template . '.tpl');
         set_error_handler($previous);
 
-        $processorFile = Bootstrap::getInstance()->getAppRoot() . '/processors/' . $this->template . '.php';
+        $processorFile = $appRoot . '/processors/' . $this->template . '.php';
         if ($fs->fileExists($processorFile)) {
             require_once($fs->getRealPath($processorFile));
-            $processor = new $this->template($this->baseUrl);
+            $processor = new $this->template($env->getBootstrap()->getWebAppUrl());
             if ($processor instanceof ProcessorInterface) {
                 $content = $processor->process($content, $page);
             }
@@ -95,13 +89,13 @@ class PageTemplate
     /**
      * Finds variables in template
      *
-     * @param FileSystemInterface $fs   File system
-     * @param string              $page Name of page
-     * @return string[]                 Names of variables in template
+     * @param SystemEnvironmentInterface $env  System environment
+     * @param string                     $page Name of page
+     * @return string[]                        Names of variables in template
      */
-    public function getSmartyVars(FileSystemInterface $fs, $page)
+    public function getSmartyVars(SystemEnvironmentInterface $env, $page)
     {
-        $smarty = $this->setupSmarty($this->languages[0], $page, $fs);
+        $smarty = $this->setupSmarty($this->languages[0], $page, $env);
         $vars = array();
         $previous = set_error_handler(function ($errNo, $errStr) use (&$vars) {
             if (preg_match('/Undefined index: (.+)/', $errStr, $matches)) {
@@ -119,14 +113,15 @@ class PageTemplate
      *
      * @param $language
      * @param $page
-     * @param FileSystemInterface $fs
+     * @param SystemEnvironmentInterface $env
      * @return \Smarty
      */
-    private function setupSmarty($language, $page, FileSystemInterface $fs)
+    private function setupSmarty($language, $page, SystemEnvironmentInterface $env)
     {
-        $bootstrap = Bootstrap::getInstance();
-        $appRoot = $bootstrap->getAppRoot();
         $smarty = new \Smarty;
+        $fs = $env->getFileSystem();
+        $bootstrap = $env->getBootstrap();
+        $appRoot = $bootstrap->getAppRoot();
         $template_dir = $fs->getRealPath($appRoot . '/templates');
         $smarty->setTemplateDir($template_dir);
         $smarty->setCompileDir($fs->getRealPath($appRoot . '/files/smarty'));
@@ -136,7 +131,7 @@ class PageTemplate
         $smarty->assign('language', $language);
         $smarty->assign('page', $page);
         $smarty->assign('template_dir', $template_dir);
-        $smarty->assign('base_url', $this->baseUrl);
+        $smarty->assign('base_url', $bootstrap->getWebAppUrl());
         $smarty->assign('base_dir', $appRoot);
         $smarty->assign('params', http_build_query($this->params));
         $smarty->assign('instType', $bootstrap->getInstallationType());

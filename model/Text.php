@@ -28,7 +28,7 @@ class Text extends \justso\justtexts\model\Text
         $ruleMatcher = new RuleMatcher($config['pages']);
         $template = $ruleMatcher->find($this->pageName);
         if ($template != null) {
-            $pageTemplate = new PageTemplate($template, $this->languages, '');
+            $pageTemplate = new PageTemplate($template, $this->languages);
             $vars = $pageTemplate->getSmartyVars($this->fs, $this->pageName);
             foreach (array_diff($vars, array_keys($texts)) as $missing) {
                 $texts[$missing] = array(

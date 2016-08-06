@@ -6,7 +6,7 @@
  * Time: 12:35
  */
 
-namespace justso\justtexts\test;
+namespace justso\justtexts;
 
 use justso\justapi\RequestHelper;
 use justso\justgen\model\Page;

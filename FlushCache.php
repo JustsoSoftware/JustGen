@@ -22,8 +22,9 @@ class FlushCache extends RestService
 {
     public function getAction()
     {
-        $config = Bootstrap::getInstance()->getConfiguration();
-        $website = Bootstrap::getInstance()->getAppRoot() . '/htdocs/';
+        $bootstrap = $this->environment->getBootstrap();
+        $config = $bootstrap->getConfiguration();
+        $website = $bootstrap->getAppRoot() . '/htdocs/';
         $fs = $this->environment->getFileSystem();
         foreach ($config['languages'] as $language) {
             foreach ($fs->glob($website . $language . '/*') as $page) {

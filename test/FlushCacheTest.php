@@ -7,12 +7,10 @@
  * @package    justso\justgen\test
  */
 
-namespace justso\justgen\test;
+namespace justso\justgen;
 
-use justso\justapi\Bootstrap;
 use justso\justapi\testutil\FileSystemSandbox;
 use justso\justapi\testutil\ServiceTestBase;
-use justso\justgen\FlushCache;
 
 /**
  * Class FlushCacheTest

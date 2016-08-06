@@ -9,7 +9,6 @@
 
 namespace justso\justgen;
 
-use justso\justapi\Bootstrap;
 use justso\justapi\InvalidParameterException;
 use justso\justapi\NotFoundException;
 use justso\justapi\RestService;
@@ -28,10 +27,11 @@ class PageGenerator extends RestService
 
     private $page = 'index';
 
-    public function __construct(SystemEnvironmentInterface $environment, $siteMapEnv = 'production')
+    private $forceSiteMapUpdate = false;
+
+    public function __construct(SystemEnvironmentInterface $environment)
     {
         parent::__construct($environment);
-        $this->siteMapEnv = $siteMapEnv;
     }
 
     /**
@@ -39,7 +39,7 @@ class PageGenerator extends RestService
      */
     public function getAction()
     {
-        $config = Bootstrap::getInstance()->getConfiguration();
+        $config = $this->environment->getBootstrap()->getConfiguration();
         $languages = $config['languages'];
         try {
             $this->extractParams($languages);
@@ -75,7 +75,7 @@ class PageGenerator extends RestService
      */
     private function findMatchingPageRule()
     {
-        $config = Bootstrap::getInstance()->getConfiguration();
+        $config = $this->environment->getBootstrap()->getConfiguration();
         $ruleMatcher = new RuleMatcher($config['pages']);
         $entry = $ruleMatcher->find($this->page);
         if ($entry !== null) {
@@ -92,7 +92,7 @@ class PageGenerator extends RestService
      */
     private function extractParams($languages)
     {
-        $config = Bootstrap::getInstance()->getConfiguration();
+        $config = $this->environment->getBootstrap()->getConfiguration();
         $server = $this->environment->getRequestHelper()->getServerParams();
         preg_match('/^\/?(..)?\/(.*)?/', $server['REDIRECT_URL'], $parts);
 
@@ -128,7 +128,7 @@ class PageGenerator extends RestService
      */
     private function storeContent($content)
     {
-        $appRoot = Bootstrap::getInstance()->getAppRoot();
+        $appRoot = $this->environment->getBootstrap()->getAppRoot();
         $destination = $appRoot . '/htdocs/' . $this->language . '/' . $this->page . '.html';
         $fs = $this->environment->getFileSystem();
         $fs->putFile($destination, $content);
@@ -146,7 +146,7 @@ class PageGenerator extends RestService
     public function handlePageRule($rule, $languages, $okCode = '200 Ok')
     {
         $dynamic = strpos($rule, 'dynamic:') === 0;
-        $develop = Bootstrap::getInstance()->getInstallationType() === 'development';
+        $develop = $this->environment->getBootstrap()->getInstallationType() === 'development';
         $template = $dynamic ? substr($rule, strlen('dynamic:')) : $rule;
         $content = $this->generate($template, $languages);
         if (!$dynamic && !$develop) {
@@ -166,17 +166,14 @@ class PageGenerator extends RestService
      */
     private function generate($templateName, $languages)
     {
-        $server = $this->environment->getRequestHelper()->getServerParams();
-        $baseUrl = 'http' . (!empty($server['HTTPS']) ? 's' : '') . '://' . $server['HTTP_HOST'];
         $rawParams = $this->environment->getRequestHelper()->getAllParams();
         $params = array_filter($rawParams, function () use (&$rawParams) {
             $key = key($rawParams);
             next($rawParams);
             return strpos($key, '_') !== 0;
         });
-        $pageTemplate = new PageTemplate($templateName, $languages, $baseUrl, $params);
-        $fs = $this->environment->getFileSystem();
-        return $pageTemplate->generate($this->language, $this->page, $fs);
+        $pageTemplate = new PageTemplate($templateName, $languages, $params);
+        return $pageTemplate->generate($this->language, $this->page, $this->environment);
     }
 
     /**
@@ -184,12 +181,12 @@ class PageGenerator extends RestService
      */
     private function updateSiteMap()
     {
-        $config = Bootstrap::getInstance()->getConfiguration();
-        if (isset($config['environments'][$this->siteMapEnv])) {
-            $url = $config['environments'][$this->siteMapEnv]['appurl'] . '/' . $this->language . '/' . $this->page;
+        $bootstrap = $this->environment->getBootstrap();
+        if ($this->forceSiteMapUpdate || $bootstrap->getInstallationType() === 'production') {
+            $url = $bootstrap->getWebAppUrl() . '/' . $this->language . '/' . $this->page;
             $fs = $this->environment->getFileSystem();
             $now = (new \DateTime())->format(\DateTime::W3C);
-            $fileName = Bootstrap::getInstance()->getAppRoot() . '/htdocs/sitemap.xml';
+            $fileName = $bootstrap->getAppRoot() . '/htdocs/sitemap.xml';
             $sitemap = new \SimpleXMLElement($fs->getFile($fileName));
             $found = false;
             foreach ($sitemap->url as $page) {
@@ -212,5 +209,10 @@ class PageGenerator extends RestService
             $dom->loadXML($sitemap->asXML());
             $fs->putFile($fileName, $dom->saveXML());
         }
+    }
+
+    public function enforceSiteMapUpdate()
+    {
+        $this->forceSiteMapUpdate = true;
     }
 }

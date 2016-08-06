@@ -7,14 +7,12 @@
  * @package    justso\justgen\test
  */
 
-namespace justso\justgen\test;
+namespace justso\justgen;
 
-use justso\justapi\Bootstrap;
 use justso\justapi\FileSystemInterface;
 use justso\justapi\testutil\ServiceTestBase;
 use justso\justapi\testutil\FileSystemSandbox;
 use justso\justapi\testutil\TestEnvironment;
-use justso\justgen\PageGenerator;
 
 /**
  * Class PageGeneratorTest
@@ -26,20 +24,22 @@ class PageGeneratorTest extends ServiceTestBase
     {
         parent::setUp();
         $this->createTestEnvironment();
-        $config = array(
-            'environments' => array('test' => array(
-                'approot' => '/test-root',
-                'appurl' => 'http://localhost',
-            )),
-            'languages' => array('de'),
-            'pages' => array(
+        $config = [
+            'environments' => [
+                'test' => [
+                    'approot' => '/test-root',
+                    'appurl' => 'https://example.com',
+                ],
+            ],
+            'languages' => ['de'],
+            'pages' => [
                 'index' => 'testTemplate',
                 'error404' => 'errorTemplate',
-            ),
-            'redirects' => array(
+            ],
+            'redirects' => [
                 'index2' => 'index',
-            ),
-        );
+            ],
+        ];
         $this->env->getBootstrap()->setTestConfiguration('/test-root', $config);
     }
 
@@ -150,11 +150,12 @@ class PageGeneratorTest extends ServiceTestBase
         $sitemapFile = '/test-root/htdocs/sitemap.xml';
         $fs->putFile($sitemapFile, file_get_contents(__DIR__ . '/sitemap.xml'));
 
-        $service = new PageGenerator($this->env, 'test');
+        $service = new PageGenerator($this->env);
+        $service->enforceSiteMapUpdate();
         $service->getAction();
         $this->assertTrue(in_array('putFile(' . $sitemapFile . ')', $fs->getProtocol()));
         $sitemap = $fs->getFile($sitemapFile);
-        $this->assertSame(1, preg_match('/<loc>http:\/\/localhost\/de\/index<\/loc>/', $sitemap));
+        $this->assertContains('<loc>https://example.com/de/index</loc>', $sitemap);
     }
 
     /**
