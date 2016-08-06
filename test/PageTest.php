@@ -9,7 +9,7 @@
 namespace justso\justtexts;
 
 use justso\justapi\RequestHelper;
-use justso\justgen\model\Page;
+use justso\justgen\Page;
 
 class PageTest extends \PHPUnit_Framework_TestCase
 {

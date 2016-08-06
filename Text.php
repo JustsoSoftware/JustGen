@@ -7,10 +7,7 @@
  * @package    justso\justgen\model
  */
 
-namespace justso\justgen\model;
-
-use justso\justgen\PageTemplate;
-use justso\justgen\RuleMatcher;
+namespace justso\justgen;
 
 /**
  * Class Text
