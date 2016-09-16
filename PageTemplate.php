@@ -135,6 +135,7 @@ class PageTemplate
         $smarty->assign('base_dir', $appRoot);
         $smarty->assign('params', http_build_query($this->params));
         $smarty->assign('instType', $bootstrap->getInstallationType());
+        $smarty->assign('genTime', time());
         return $smarty;
     }
 }
