@@ -59,14 +59,7 @@ class PageTemplate
         $fs = $env->getFileSystem();
         $appRoot = $env->getBootstrap()->getAppRoot();
         $smarty = $this->setupSmarty($language, $page, $env);
-        /** @var \justso\justtexts\TextInterface $pageTexts */
-        $pageTexts = $env->getDIC()->get('\justso\justtexts\Text', [$env, $page]);
-        $smarty->assign(array_map(
-            function ($info) {
-                return $info['content'];
-            },
-            $pageTexts->getPageTexts($language)
-        ));
+        $smarty->assign($this->getPageTexts($language, $page, $env));
 
         $previous = set_error_handler(function () {
             return true;
@@ -137,5 +130,25 @@ class PageTemplate
         $smarty->assign('instType', $bootstrap->getInstallationType());
         $smarty->assign('genTime', time());
         return $smarty;
+    }
+
+    private function getPageTexts($language, $page, SystemEnvironmentInterface $env)
+    {
+        $list = [];
+        $texts = [];
+        foreach (explode('/', $page) as $index => $component) {
+            $list[] = ($index ? $list[count($list) - 1] . '/' : '') . $component;
+        }
+        foreach ($list as $page) {
+            /** @var \justso\justtexts\TextInterface $pageTexts */
+            $pageTexts = $env->getDIC()->get('\justso\justtexts\Text', [$env, $page]);
+            $texts = $texts + array_map(
+                    function ($info) {
+                        return $info['content'];
+                    },
+                    $pageTexts->getPageTexts($language)
+                );
+        }
+        return $texts;
     }
 }
