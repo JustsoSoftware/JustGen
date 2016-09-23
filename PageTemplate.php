@@ -142,11 +142,13 @@ class PageTemplate
 
     private function getPageTexts($language, $page, SystemEnvironmentInterface $env)
     {
-        $list = [];
-        $texts = [];
-        foreach (explode('/', $page) as $index => $component) {
-            $list[] = ($index ? $list[count($list) - 1] . '/' : '') . $component;
+        $list = [$page];
+        $path = dirname($page);
+        while ($path !== '.') {
+            $path = dirname($path);
+            $list[] = $path . '/' . basename($page);
         }
+        $texts = [];
         foreach ($list as $page) {
             /** @var \justso\justtexts\TextInterface $pageTexts */
             $pageTexts = $env->getDIC()->get('\justso\justtexts\Text', [$env, $page]);
