@@ -22,13 +22,16 @@ The module utilizes Apache rewriting, the JustAPI and the JustTexts package.
   
 ## Setup
 
-Checkout in vendor/justso/justgen and append a line
+Checkout in vendor/justso/justgen and add the lines
 
 ```
-  "justgen/*":   "file:vendor/justso/justgen/services.json"
+  "justtexts/page/*/text/*": "justso\\justgen\\TextService",
+  "justgen/*":               "file:vendor/justso/justgen/services.json"
 ```
 
-to your config.json file (see JustAPI package).
+to your config.json file section "services" (see JustAPI package). Make sure that at least the first precedes the entry
+for "justtexts" so that the modified TextService class is used. It adds not yet defined text containers to the
+JustTexts frontend when editing page content if they are used in the template.
 
 To make the automatic page generation work, you need to extend your Apache configuration like this:
 

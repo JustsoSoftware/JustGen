@@ -24,7 +24,9 @@ class Text extends \justso\justtexts\Text
         $ruleMatcher = new RuleMatcher($config['pages']);
         $template = $ruleMatcher->find($this->pageName);
         if ($template != null) {
-            $pageTemplate = new PageTemplate(str_replace('dynamic:', '', $template), $this->languages);
+            $templateRoot = $this->env->getBootstrap()->getAppRoot() . '/templates';
+            $templateName = str_replace('dynamic:', '', $template) . '.tpl';
+            $pageTemplate = new PageTemplate($templateRoot, $templateName, $this->languages);
             $vars = $pageTemplate->getSmartyVars($this->env, $this->pageName);
             foreach (array_diff($vars, array_keys($texts)) as $missing) {
                 $texts[$missing] = array(

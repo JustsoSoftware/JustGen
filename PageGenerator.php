@@ -172,7 +172,8 @@ class PageGenerator extends RestService
             next($rawParams);
             return strpos($key, '_') !== 0;
         });
-        $pageTemplate = new PageTemplate($templateName, $languages, $params);
+        $templateRoot = $this->environment->getBootstrap()->getAppRoot() . '/templates';
+        $pageTemplate = new PageTemplate($templateRoot, $templateName . '.tpl', $languages, $params);
         return $pageTemplate->generate($this->language, $this->page, $this->environment);
     }
 

@@ -24,7 +24,7 @@ class PageTemplateTest extends \PHPUnit_Framework_TestCase
     public function testGenerate()
     {
         $env = $this->createTestEnvironment();
-        $template = new PageTemplate('testTemplate', ['de']);
+        $template = new PageTemplate('/test-root/templates/', 'testTemplate.tpl', ['de']);
         $result = $template->generate('de', 'abc', $env);
         $this->assertSame('prefix Hallo Welt! postfix', $result);
     }
@@ -32,7 +32,7 @@ class PageTemplateTest extends \PHPUnit_Framework_TestCase
     public function testWithProcessor()
     {
         $env = $this->createTestEnvironment();
-        $template = new PageTemplate('testTemplate', ['de']);
+        $template = new PageTemplate('/test-root/templates/', 'testTemplate.tpl', ['de']);
         $content = file_get_contents(__DIR__ . '/Processor.php');
         $env->getFileSystem()->putFile('/test-root/processors/testTemplate.php', $content);
         $result = $template->generate('de', 'abc', $env);
@@ -42,7 +42,7 @@ class PageTemplateTest extends \PHPUnit_Framework_TestCase
     public function testGetSmartyVars()
     {
         $env = $this->createTestEnvironment();
-        $template = new PageTemplate('testTemplate', ['de']);
+        $template = new PageTemplate('/test-root/templates/', 'testTemplate.tpl', ['de']);
         $result = $template->getSmartyVars($env, 'abc');
         $this->assertSame(array('test'), $result);
     }

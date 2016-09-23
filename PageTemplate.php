@@ -22,6 +22,11 @@ class PageTemplate
     /**
      * @var string
      */
+    private $templateRoot;
+
+    /**
+     * @var string
+     */
     private $template;
 
     /**
@@ -39,8 +44,9 @@ class PageTemplate
      * @param string[] $languages
      * @param array $params
      */
-    public function __construct($template, $languages, $params = [])
+    public function __construct($templateRoot, $template, $languages, $params = [])
     {
+        $this->templateRoot = $templateRoot;
         $this->template  = $template;
         $this->languages = $languages;
         $this->params    = $params;
@@ -64,13 +70,14 @@ class PageTemplate
         $previous = set_error_handler(function () {
             return true;
         });
-        $content = $smarty->fetch($this->template . '.tpl');
+        $content = $smarty->fetch($this->template);
         set_error_handler($previous);
 
-        $processorFile = $appRoot . '/processors/' . $this->template . '.php';
+        $processorClass = basename($this->template);
+        $processorFile = $appRoot . '/processors/' . $processorClass . '.php';
         if ($fs->fileExists($processorFile)) {
             require_once($fs->getRealPath($processorFile));
-            $processor = new $this->template($env->getBootstrap()->getWebAppUrl());
+            $processor = new $processorClass($env->getBootstrap()->getWebAppUrl());
             if ($processor instanceof ProcessorInterface) {
                 $content = $processor->process($content, $page);
             }
@@ -96,7 +103,7 @@ class PageTemplate
             }
             return true;
         }, E_NOTICE);
-        $smarty->fetch($this->template . '.tpl');
+        $smarty->fetch($this->template);
         set_error_handler($previous);
         return array_keys($vars);
     }
@@ -115,7 +122,7 @@ class PageTemplate
         $fs = $env->getFileSystem();
         $bootstrap = $env->getBootstrap();
         $appRoot = $bootstrap->getAppRoot();
-        $template_dir = $fs->getRealPath($appRoot . '/templates');
+        $template_dir = $fs->getRealPath($this->templateRoot);
         $smarty->setTemplateDir($template_dir);
         $smarty->setCompileDir($fs->getRealPath($appRoot . '/files/smarty'));
         if ($fs->fileExists($appRoot . '/smartyPlugins')) {
