@@ -129,6 +129,7 @@ class PageTemplate
         $smarty->assign('params', http_build_query($this->params));
         $smarty->assign('instType', $bootstrap->getInstallationType());
         $smarty->assign('genTime', time());
+        $smarty->assign('SystemEnvironment', $env);
         return $smarty;
     }
 
