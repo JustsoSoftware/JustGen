@@ -73,7 +73,7 @@ class PageTemplate
         $content = $smarty->fetch($this->template);
         set_error_handler($previous);
 
-        $processorClass = basename($this->template);
+        $processorClass = pathinfo($this->template)['filename'];
         $processorFile = $appRoot . '/processors/' . $processorClass . '.php';
         if ($fs->fileExists($processorFile)) {
             require_once($fs->getRealPath($processorFile));
