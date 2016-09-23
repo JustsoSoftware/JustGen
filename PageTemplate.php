@@ -145,6 +145,7 @@ class PageTemplate
         $list = [$page];
         $path = dirname($page);
         while ($path !== '.') {
+            $list[] = $path;
             $path = dirname($path);
             $list[] = $path . '/' . basename($page);
         }
