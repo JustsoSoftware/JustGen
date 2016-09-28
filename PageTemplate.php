@@ -154,11 +154,11 @@ class PageTemplate
             /** @var \justso\justtexts\TextInterface $pageTexts */
             $pageTexts = $env->getDIC()->get('\justso\justtexts\Text', [$env, $page]);
             $texts = $texts + array_map(
-                    function ($info) {
-                        return $info['content'];
-                    },
-                    $pageTexts->getPageTexts($language)
-                );
+                function ($info) {
+                    return $info['content'];
+                },
+                $pageTexts->getPageTexts($language)
+            );
         }
         return $texts;
     }
