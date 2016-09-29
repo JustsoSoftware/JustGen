@@ -24,5 +24,4 @@ class TextService extends \justso\justtexts\TextService
             $pageName
         ]);
     }
-
 }

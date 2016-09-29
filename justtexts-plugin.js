@@ -5,11 +5,12 @@
  * @author     j.schirrmacher@justso.de
  */
 
+"use strict";
+
 /* global jQuery, alert */
 /*jslint nomen: true */
 
 (function ($) {
-    "use strict";
     var pageEntry = $("#PageEntry"),
         value = pageEntry.html();
 
