@@ -101,12 +101,9 @@ class PageGeneratorTest extends ServiceTestBase
         $service = new PageGenerator($this->env);
         $service->getAction();
 
-        $header = array(
-            'Location: /de/index',
-            'HTTP/1.0 301 Moved Permanently',
-            'Content-Type: text/plain'
-        );
-        $this->assertEquals($header, $this->env->getResponseHeader());
+        $this->assertSame('HTTP/1.0 301 Moved Permanently', $this->env->getResponseCode());
+        $this->assertSame(['/de/index'], $this->env->getResponseHeaderEntries('Location'));
+        $this->assertSame(['text/plain'], $this->env->getResponseHeaderEntries('Content-Type'));
     }
 
     public function testRedirects()
@@ -117,13 +114,10 @@ class PageGeneratorTest extends ServiceTestBase
         $service = new PageGenerator($this->env);
         $service->getAction();
 
-        $header = array(
-            'Location: /de/index',
-            'HTTP/1.0 301 Moved Permanently',
-            'Content-Type: text/plain',
-        );
-        $this->assertEquals($header, $this->env->getResponseHeader());
-        $this->assertSame('Location: /de/index', $this->env->getResponseContent());
+        $this->assertSame('HTTP/1.0 301 Moved Permanently', $this->env->getResponseCode());
+        $header = $this->env->getResponseHeaderList();
+        $this->assertSame(['/de/index'], $this->env->getResponseHeaderEntries('Location'));
+        $this->assertSame(['text/plain'], $this->env->getResponseHeaderEntries('Content-Type'));
     }
 
     public function testUnknownLanguage()
@@ -134,11 +128,8 @@ class PageGeneratorTest extends ServiceTestBase
         $service = new PageGenerator($this->env);
         $service->getAction();
 
-        $header = array(
-            'HTTP/1.0 500 Server Error',
-            'Content-Type: text/plain',
-        );
-        $this->assertEquals($header, $this->env->getResponseHeader());
+        $this->assertSame('HTTP/1.0 500 Server Error', $this->env->getResponseCode());
+        $this->assertSame(['text/plain'], $this->env->getResponseHeaderEntries('Content-Type'));
         $this->assertSame("Unknown language", $this->env->getResponseContent());
     }
 
