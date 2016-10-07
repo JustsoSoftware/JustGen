@@ -4,18 +4,16 @@ Simple HTML page generator module.
 
 HTML pages are generated on-the-fly on base of Smarty templates with texts from JustTexts package and placed in the
 file system to be retrieved directly later. When the template or text is changed (aka content management), it is
-sufficient to delete the generated HTML files to have then re-generated again later.
+sufficient to delete the generated HTML files to have them re-generated again later.
 
 The package doesn't try to be a content management system, but a smart tool to help people have more control with html
 pages and the content without the need to use a 'real' CMS with all it's superpowers. Instead, you can create small and
 really fast web pages in multiple languages.
 
-The module utilizes Apache rewriting, the JustAPI and the JustTexts package.
-
 ## Installation
 
 ### Composer
-  composer require justso/justgen:1.*
+  composer require justso/justgen
 
 ### git
   git clone git://github.com/JustsoSoftware/JustGen.git vendor/justso/justgen
@@ -25,35 +23,37 @@ The module utilizes Apache rewriting, the JustAPI and the JustTexts package.
 Checkout in vendor/justso/justgen and add the lines
 
 ```
-  "justtexts/page/*/text/*": "justso\\justgen\\TextService",
-  "justgen/*":               "file:vendor/justso/justgen/services.json"
+  "/justtexts/page/*/text/*": "justso\\justgen\\TextService",
+  "/justgen/flushcache":      "justso\\justgen\\FlushCache",
+  "*":                        "file:vendor/justso/justgen/services.json"
 ```
 
-to your config.json file section "services" (see JustAPI package). Make sure that at least the first precedes the entry
+to your `config.json` file section "services" (see JustAPI package). Make sure that the first precedes the entry
 for "justtexts" so that the modified TextService class is used. It adds not yet defined text containers to the
 JustTexts frontend when editing page content if they are used in the template.
+The `*` rule should be the last of all your rules, and catches all unknown accesses and tries to find a page to
+generate. The page generator itself sends an 404 error if no such page exists.
 
-To make the automatic page generation work, you need to extend your Apache configuration like this:
+If you use Apache, your configuration should be like that:
 
 ```
   <Directory /var/www/htdocs>
     ...
-    RewriteEngine On
-    RewriteCond %{SCRIPT_FILENAME} !-f
-    RewriteCond %{SCRIPT_FILENAME} !-d
-    RewriteRule ^(.*)$ /api/justgen/ [L,PT,QSA]
-
-    # Handle missing DirectoryIndex file via JustGen - the rewrite rule wouldn't work here
+    Redirect 301 /index /de/
     ErrorDocument 403 /api/justgen/
+    ErrorDocument 404 /api/justgen/
   </Directory>
 ```
 
-After reloading your Apache, pages can be generated.
-
-To make JustTexts frontend work with JustGen, you need to overwrite two entries in your dependencies.php file:
+With NginX, make sure that 403 and 404 errors are routed to the FrontController:
 
 ```
-  '\justso\justtexts\Text'    => '\justso\justgen\model\Text',
+    error_page 403 404 = /vendor/justso/justapi/FrontController.php;
+```
+
+To make JustTexts frontend work with JustGen, you need to overwrite an entry in your dependencies.php file:
+
+```
   '\justso\justtexts\Page'    => '\justso\justgen\model\Page',
 ```
 

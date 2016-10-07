@@ -43,9 +43,9 @@ class PageGeneratorTest extends ServiceTestBase
         $this->env->getBootstrap()->setTestConfiguration('/test-root', $config);
     }
 
-    private function createServerParams($redirectUrl, $secure = false)
+    private function createServerParams($requestUri, $secure = false)
     {
-        $params = [ 'HTTP_HOST' => 'example.com', 'REDIRECT_URL' => $redirectUrl ];
+        $params = [ 'HTTP_HOST' => 'example.com', 'REQUEST_URI' => $requestUri ];
         if ($secure) {
             $params['HTTPS'] = 'on';
         }
@@ -95,7 +95,7 @@ class PageGeneratorTest extends ServiceTestBase
 
     public function testAccessWithDefaults()
     {
-        $this->env->getRequestHelper()->set(array(), $this->createServerParams(''));
+        $this->env->getRequestHelper()->set([], $this->createServerParams('/'));
         $this->setupPageFiles($this->env);
 
         $service = new PageGenerator($this->env);
@@ -115,7 +115,6 @@ class PageGeneratorTest extends ServiceTestBase
         $service->getAction();
 
         $this->assertSame('HTTP/1.0 301 Moved Permanently', $this->env->getResponseCode());
-        $header = $this->env->getResponseHeaderList();
         $this->assertSame(['/de/index'], $this->env->getResponseHeaderEntries('Location'));
         $this->assertSame(['text/plain'], $this->env->getResponseHeaderEntries('Content-Type'));
     }

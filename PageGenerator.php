@@ -93,8 +93,7 @@ class PageGenerator extends RestService
     private function extractParams($languages)
     {
         $config = $this->environment->getBootstrap()->getConfiguration();
-        $server = $this->environment->getRequestHelper()->getServerParams();
-        preg_match('/^\/?(..)?\/(.*)?/', $server['REDIRECT_URL'], $parts);
+        preg_match('/^\/?(..)?\/(.*)?/', $this->getURI(), $parts);
 
         $this->language = $languages[0];
         $fallback = !empty($config['fallbackForUnknownLanguage']);
@@ -119,6 +118,15 @@ class PageGenerator extends RestService
                 }
             }
         }
+    }
+
+    private function getURI()
+    {
+        $server = $this->environment->getRequestHelper()->getServerParams();
+        if (empty($server['REQUEST_URI'])) {
+            throw new InvalidParameterException("Missing path info");
+        }
+        return $server['REQUEST_URI'];
     }
 
     /**
