@@ -93,7 +93,7 @@ class PageGenerator extends RestService
     private function extractParams($languages)
     {
         $config = $this->environment->getBootstrap()->getConfiguration();
-        preg_match('/^\/?(..)?\/(.*)?/', $this->getURI(), $parts);
+        preg_match('/^\/?(..)?\/([^\?]*)/', $this->getURI(), $parts);
 
         $this->language = $languages[0];
         $fallback = !empty($config['fallbackForUnknownLanguage']);
